@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 //import 'package:liquid_glass_widgets/liquid_glass_widgets.dart';
 import 'package:window_manager/window_manager.dart';
@@ -13,6 +15,8 @@ void main() async {
   await windowManager.ensureInitialized();
 
   WindowOptions windowOptions = const WindowOptions(
+    size: Size(1208, 779),
+    minimumSize: Size(1208, 779),
     backgroundColor: Colors.transparent,
     skipTaskbar: false,
     titleBarStyle: TitleBarStyle.hidden,
@@ -34,7 +38,7 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'Flutter Demo',
       theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
+        colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
       ),
       home: HomePage(),
     );
@@ -56,9 +60,7 @@ class _HomePageState extends State<HomePage>
     const DownloaderPage(),
     const Center(child: Text("設定页面内容", style: TextStyle(fontSize: 24))),
 
-    //const NovelExtractorPage(),
-    const NovelCatalogPage(),
-    const Center(child: Text("其他页面", style: TextStyle(fontSize: 24))),
+    const NovelExtractorPage(),
   ];
 
   int _selectedIndex = 0;
@@ -144,12 +146,19 @@ class _HomePageState extends State<HomePage>
           ..forward();
 
     return Scaffold(
-      backgroundColor: Color.alphaBlend(Theme.of(context).colorScheme.primaryContainer.withOpacity(0.3), Theme.of(context).colorScheme.surfaceContainerLow),
+      backgroundColor: Color.alphaBlend(
+        Theme.of(context).colorScheme.primaryContainer.withOpacity(0.3),
+        Theme.of(context).colorScheme.surfaceContainerLow,
+      ),
       body: Padding(
         padding: const EdgeInsets.all(8),
         child: Scaffold(
           backgroundColor: Colors.transparent,
           appBar: AppBar(
+            leading: Container(
+              alignment: Alignment.center,
+              child: Image.asset("assets/img/Cirno.png", width: 36, height: 36),
+            ),
             scrolledUnderElevation: 0,
             surfaceTintColor: Colors.transparent,
             backgroundColor: Colors.transparent,
@@ -159,15 +168,32 @@ class _HomePageState extends State<HomePage>
               child: Container(color: Colors.transparent),
             ),
             actions: [
+              Stack(
+                children: [
+                  IconButton.filledTonal(
+                    onPressed: () {},
+                    icon: const Icon(Icons.download_outlined),
+                    style: IconButton.styleFrom(
+                      backgroundColor: Theme.of(
+                        context,
+                      ).colorScheme.tertiaryContainer,
+                      foregroundColor: Theme.of(
+                        context,
+                      ).colorScheme.onTertiaryContainer,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(width: 4),
               IconButton.filledTonal(
-                style: IconButton.styleFrom(
-                  backgroundColor: Theme.of(
-                    context,
-                  ).colorScheme.tertiaryContainer,
-                  foregroundColor: Theme.of(
-                    context,
-                  ).colorScheme.onTertiaryContainer,
-                ),
+                // style: IconButton.styleFrom(
+                //   backgroundColor: Theme.of(
+                //     context,
+                //   ).colorScheme.tertiaryContainer,
+                //   foregroundColor: Theme.of(
+                //     context,
+                //   ).colorScheme.onTertiaryContainer,
+                // ),
                 onPressed: () => windowManager.minimize(),
                 icon: const Icon(Icons.minimize),
               ),
@@ -180,7 +206,7 @@ class _HomePageState extends State<HomePage>
               ),
               const SizedBox(width: 4),
               IconButton.filled(
-                onPressed: () => windowManager.close(),
+                onPressed: () => exit(0),
                 icon: Icon(
                   Icons.close,
                   color: Theme.of(context).colorScheme.onPrimary,
@@ -289,15 +315,17 @@ class _HomePageState extends State<HomePage>
                   position: slideAnimation,
                   child: FadeTransition(
                     opacity: animationController,
-                    child:  Padding(
-                        padding: const EdgeInsets.only(left: 12),
-                        child: ClipRRect(
-                      borderRadius: const BorderRadius.all(Radius.circular(8)),
-                      child: _pages[_selectedIndex],
+                    child: Padding(
+                      padding: const EdgeInsets.only(left: 12, top: 8),
+                      child: ClipRRect(
+                        borderRadius: const BorderRadius.all(
+                          Radius.circular(8),
+                        ),
+                        child: _pages[_selectedIndex],
                       ),
                     ),
                   ),
-                )
+                ),
               ),
             ],
           ),

@@ -9,6 +9,7 @@ import 'package:unu_novel_toolbox/widgets/widgets.dart';
 import 'package:webview_windows/webview_windows.dart';
 
 import '../widgets/expressive_refresh.dart';
+import '../services/download_manager.dart';
 
 // 章节数据模型
 class cwm_NovelChapter {
@@ -43,6 +44,8 @@ class _cwm_NovelCatalogPageState extends State<cwm_NovelCatalogPage> {
   late final WebviewController _webviewController;
   bool _webViewInitialized = false;
   String _bookId = '100012892';
+
+  bool _isEpub = true;
 
   @override
   void initState() {
@@ -550,7 +553,9 @@ class _cwm_NovelCatalogPageState extends State<cwm_NovelCatalogPage> {
                   child: Text(
                     _statusMessage,
                     style: TextStyle(
-                      color: Theme.of(context).colorScheme.surfaceContainerHigh,
+                      color: Theme.of(
+                        context,
+                      ).colorScheme.inverseSurface.withAlpha(128),
                       fontSize: 14,
                       fontWeight: FontWeight.w500,
                     ),
@@ -750,6 +755,75 @@ class _cwm_NovelCatalogPageState extends State<cwm_NovelCatalogPage> {
               ),
             ],
           ),
+        ),
+      ),
+
+      bottomNavigationBar: BottomAppBar(
+        color: Theme.of(context).colorScheme.surfaceContainerHighest,
+        elevation: 0.0,
+        child: Row(
+          children: <Widget>[
+            if (_catalogData.isNotEmpty) ...[
+              IntrinsicWidth(
+                child: RadioListTile<bool>(
+                  shape: const RoundedRectangleBorder(
+                    borderRadius: BorderRadius.all(Radius.circular(128)),
+                  ),
+                  title: const Text("TXT"),
+                  value: false,
+                  groupValue: _isEpub,
+                  onChanged: (bool? value) => setState(() {
+                    _isEpub = false;
+                  }),
+                ),
+              ),
+              IntrinsicWidth(
+                child: RadioListTile<bool>(
+                  shape: const RoundedRectangleBorder(
+                    borderRadius: BorderRadius.all(Radius.circular(128)),
+                  ),
+                  title: const Text("EPUB"),
+                  value: true,
+                  groupValue: _isEpub,
+                  onChanged: (bool? value) => setState(() {
+                    _isEpub = true;
+                  }),
+                ),
+              ),
+            ],
+            const Expanded(child: SizedBox()),
+
+            FilledButton(
+              onPressed: _catalogData.isEmpty
+                  ? null
+                  : () {
+                      // final cwm_NovelExtractor extractor = cwm_NovelExtractor();
+                      // bool isInitSuccess = await extractor.initialize();
+
+                      // if (isInitSuccess) {
+                      //   String novelUrl =
+                      //       'https://www.ciweimao.com/chapter/114373635';
+                      //   String content = await extractor.getNovelContent(
+                      //     novelUrl,
+                      //   );
+
+                      //   if (content.contains('失败') ||
+                      //       content.contains('未找到') ||
+                      //       content.contains('URL格式错误')) {
+                      //     print('提取失败：$content');
+                      //   } else {
+                      //     print('提取成功，内容长度：${content.length} 字符');
+                      //     print('小说内容：$content');
+                      //   }
+
+                      //   extractor.dispose();
+                      // } else {
+                      //   print('工具类初始化失败，无法提取内容');
+                      // }
+                    },
+              child: const Text("添加到下載列表"),
+            ),
+          ],
         ),
       ),
     );
