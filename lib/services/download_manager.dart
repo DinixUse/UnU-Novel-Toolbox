@@ -82,7 +82,7 @@ class cwm_NovelExtractor {
     return regex.hasMatch(url);
   }
 
-  /// 从HTML中解析小说内容
+  /// 从HTML中解析小说内容（整合所有干扰标签清理）
   String _extractNovelFromHtml(String html) {
     try {
       final document = parse(html);
@@ -91,6 +91,26 @@ class cwm_NovelExtractor {
       if (contentDiv == null) {
         return '未找到小说内容区域（J_BookRead），可能页面结构已变更';
       }
+
+      // ========== 核心：批量清理所有干扰标签 ==========
+      // 1. 清理span标签（包含24DUvz等干扰文本）
+      final allSpanTags = contentDiv.getElementsByTagName('span');
+      for (var span in allSpanTags) {
+        span.remove(); // 从DOM树中彻底删除
+      }
+
+      // 2. 清理i标签（<i data-pgid="随机数" class="J_Num num"></i>）
+      // 方式1：精准匹配带data-pgid属性的i标签（推荐）
+      final pgidITags = contentDiv.querySelectorAll('i[data-pgid]');
+      for (var iTag in pgidITags) {
+        iTag.remove();
+      }
+      // 方式2：同时清理带指定class的i标签（双重保险）
+      final numITags = contentDiv.querySelectorAll('i.J_Num, i.num');
+      for (var iTag in numITags) {
+        iTag.remove();
+      }
+      // ========== 干扰标签清理结束 ==========
 
       final paragraphs = contentDiv.getElementsByClassName('chapter');
       if (paragraphs.isEmpty) {
@@ -102,11 +122,9 @@ class cwm_NovelExtractor {
       for (var p in paragraphs) {
         String text = p.text.trim();
         
-        // 清理文本中的无用字符和特殊符号
+        // 仅保留基础的文本清理
         text = text
-            .replaceAll('27J6IT', '')
-            .replaceAll(RegExp(r'\s+'), ' ')
-            .replaceAll(RegExp(r'[^\u4e00-\u9fa5a-zA-Z0-9，。！？；：""''（）()、《》【】\s]'), '')
+            .replaceAll(RegExp(r'\s+'), ' ') // 清理多余空白
             .trim();
         
         // 过滤空内容和作者说
@@ -128,15 +146,80 @@ class cwm_NovelExtractor {
   }
 }
 
+class cwm_TaskModel {
+  String coverUrl;
+  String novelAuthor;
+  String novelTitle;
+  List<cwm_NovelVolume> volumes;
+  bool isEpub;
+
+  cwm_TaskModel({required this.coverUrl, required this.novelAuthor, required this.novelTitle, required this.volumes, required this.isEpub});
+}
 
 class cwm_DownloadManager {
-  void startDownload(
+  List<cwm_TaskModel> tasks = [];
+
+  static final cwm_DownloadManager instance = cwm_DownloadManager._internal();
+  
+  cwm_DownloadManager._internal();
+
+  void addDownloadTask(
     String coverUrl,
     String novelAuthor,
     String novelTitle,
-    List<cwm_NovelVolume> chapters,
+    List<cwm_NovelVolume> volumes,
     bool isEpub
   ) {
+    tasks.add(cwm_TaskModel(coverUrl: coverUrl, novelAuthor: novelAuthor, novelTitle: novelTitle, volumes: volumes, isEpub: isEpub));
     
+    printAllTasks();
+  }
+
+  void printAllTasks({bool showChapterUrl = false}) {
+    // 1. 打印标题和总数
+    print('\n=====================================');
+    print('📋 下载任务列表（总数：${tasks.length}）');
+    print('=====================================');
+
+    // 2. 无任务时提示
+    if (tasks.isEmpty) {
+      print('🟡 暂无下载任务');
+      print('=====================================\n');
+      return;
+    }
+
+    // 3. 遍历每个下载任务
+    for (int taskIdx = 0; taskIdx < tasks.length; taskIdx++) {
+      final task = tasks[taskIdx];
+      // 计算总章节数（所有卷的章节总和）
+      final totalChapters = task.volumes.fold(0, (sum, vol) => sum + vol.chapters.length);
+      
+      print('\n【任务 ${taskIdx + 1}】');
+      print('  📖 书名：${task.novelTitle}');
+      print('  ✍️  作者：${task.novelAuthor}');
+      print('  🖼️  封面URL：${task.coverUrl}');
+      print('  📦 格式：${task.isEpub ? 'EPUB' : 'TXT'}');
+      print('  📑 总卷数：${task.volumes.length} 卷 | 总章节数：$totalChapters 章');
+      print('  📝 卷&章节详情：');
+
+      // 4. 遍历当前任务的所有卷
+      for (int volIdx = 0; volIdx < task.volumes.length; volIdx++) {
+        final volume = task.volumes[volIdx];
+        print('    ├─ 【卷 ${volIdx + 1}】${volume.volumeName}（${volume.chapters.length}章）');
+
+        // 5. 遍历当前卷下的所有章节
+        for (int chIdx = 0; chIdx < volume.chapters.length; chIdx++) {
+          final chapter = volume.chapters[chIdx];
+          print('    │  └─ ${chIdx + 1}. ${chapter.title}');
+          
+          // 可选：显示章节URL
+          if (showChapterUrl) {
+            print('    │     └─ URL：${chapter.url}');
+          }
+        }
+      }
+    }
+
+    print('\n=====================================\n');
   }
 }
