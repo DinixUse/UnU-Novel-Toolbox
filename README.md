@@ -1,2 +1,2 @@
 # UnU Novel Toolbox
-A simple novel toolbox.
+A simple novel toolbox using flutter.
