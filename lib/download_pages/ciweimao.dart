@@ -5,42 +5,44 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:html/parser.dart' show parse;
 import 'package:html/dom.dart' as dom;
+import 'package:unu_novel_toolbox/widgets/widgets.dart';
 import 'package:webview_windows/webview_windows.dart';
 
+import '../widgets/expressive_refresh.dart';
+
 // 章节数据模型
-class NovelChapter {
+class cwm_NovelChapter {
   final String title;
   final String url;
-  NovelChapter({required this.title, required this.url});
+  cwm_NovelChapter({required this.title, required this.url});
 }
 
 // 卷数据模型
-class NovelVolume {
+class cwm_NovelVolume {
   final String volumeName;
-  final List<NovelChapter> chapters;
-  NovelVolume({required this.volumeName, required this.chapters});
+  final List<cwm_NovelChapter> chapters;
+  cwm_NovelVolume({required this.volumeName, required this.chapters});
 }
 
-class NovelCatalogPage extends StatefulWidget {
-  const NovelCatalogPage({super.key});
+class cwm_NovelCatalogPage extends StatefulWidget {
+  const cwm_NovelCatalogPage({super.key});
   @override
-  State<NovelCatalogPage> createState() => _NovelCatalogPageState();
+  State<cwm_NovelCatalogPage> createState() => _cwm_NovelCatalogPageState();
 }
 
-class _NovelCatalogPageState extends State<NovelCatalogPage> {
-  final TextEditingController _urlController = TextEditingController(
-    text: '',
-  );
+class _cwm_NovelCatalogPageState extends State<cwm_NovelCatalogPage> {
+  final TextEditingController _urlController = TextEditingController(text: '');
   bool _isLoading = false;
   String _statusMessage = '';
 
   String _novelTitle = '';
   String _novelAuthor = '';
-  List<NovelVolume> _catalogData = [];
+  String _novelCover = '';
+  List<cwm_NovelVolume> _catalogData = [];
 
   late final WebviewController _webviewController;
   bool _webViewInitialized = false;
-  String _bookId = '100463854';
+  String _bookId = '100012892';
 
   @override
   void initState() {
@@ -65,13 +67,13 @@ class _NovelCatalogPageState extends State<NovelCatalogPage> {
   Future<void> _initWebView() async {
     try {
       await _webviewController.initialize();
-      // 关键：设置User-Agent，模拟真实浏览器（反爬）
+      // 设置User-Agent，模拟真实浏览器（反爬）
       await _webviewController.setUserAgent(
         'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
       );
       await _webviewController.setBackgroundColor(Colors.transparent);
 
-      // 监听控制台日志，便于调试
+      // 监听控制台日志
       _webviewController.webMessage.listen((message) {
         debugPrint('WebView日志：$message');
       });
@@ -84,11 +86,11 @@ class _NovelCatalogPageState extends State<NovelCatalogPage> {
 
       setState(() => _webViewInitialized = true);
     } catch (e) {
-      setState(() => _statusMessage = '❌ WebView初始化失败：$e');
+      setState(() => _statusMessage = 'WebView初始化失败：$e');
     }
   }
 
-  /// 修复：绕过反爬，直接请求章节接口（替代WebView JS执行）
+  /// 绕过反爬，直接请求章节接口（替代WebView JS执行）
   Future<bool> _fetchChaptersByApi() async {
     try {
       setState(() => _statusMessage = '请求章节接口...');
@@ -119,7 +121,7 @@ class _NovelCatalogPageState extends State<NovelCatalogPage> {
             'User-Agent',
             'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
           );
-          request.headers.add('Cookie', 'ciweimao_token='); // 可替换为真实Cookie
+          request.headers.add('Cookie', 'ciweimao_token='); // 替换为真实Cookie
           return request.close();
         });
 
@@ -171,124 +173,186 @@ class _NovelCatalogPageState extends State<NovelCatalogPage> {
     }
   }
 
-  /// 修复：重新设计的目录解析逻辑，重点解决卷名解析问题
-  List<NovelVolume> _parseCatalogFromHtml(String html) {
-    final List<NovelVolume> volumes = [];
+  /// 目录解析逻辑
+  List<cwm_NovelVolume> _parseCatalogFromHtml(String html) {
+    final List<cwm_NovelVolume> volumes = [];
     try {
       final document = parse(html);
-      
-      // ========== 修复1：增强书名和作者解析 ==========
-      // 方式1：从meta标签获取（优先）
-      _novelTitle = document.querySelector('meta[property="og:novel:book_name"]')?.attributes['content']?.trim() ??
-                    document.querySelector('meta[name="title"]')?.attributes['content']?.trim() ??
-                    // 方式2：从页面标题解析
-                    document.querySelector('title')?.text?.replaceAll('- 刺猬猫阅读', '').trim() ??
-                    // 方式3：从DOM元素获取
-                    document.querySelector('.book-name')?.text?.trim() ??
-                    document.querySelector('.book-info h1')?.text?.trim() ??
-                    document.querySelector('.book-info .title')?.text?.trim() ??
-                    '未知书名';
 
-      _novelAuthor = document.querySelector('meta[property="og:novel:author"]')?.attributes['content']?.trim() ??
-                     document.querySelector('.author-name')?.text?.trim() ??
-                     document.querySelector('.book-info .author')?.text?.replaceAll('作者：', '').trim() ??
-                     document.querySelector('.book-info .author a')?.text?.trim() ??
-                     '未知作者';
+      // 方式1：从meta标签获取（优先）
+      _novelTitle =
+          document
+              .querySelector('meta[property="og:novel:book_name"]')
+              ?.attributes['content']
+              ?.trim() ??
+          document
+              .querySelector('meta[name="title"]')
+              ?.attributes['content']
+              ?.trim() ??
+          // 方式2：从页面标题解析
+          document
+              .querySelector('title')
+              ?.text
+              ?.replaceAll('- 刺猬猫阅读', '')
+              .trim() ??
+          // 方式3：从DOM元素获取
+          document.querySelector('.book-name')?.text?.trim() ??
+          document.querySelector('.book-info h1')?.text?.trim() ??
+          document.querySelector('.book-info .title')?.text?.trim() ??
+          '未知书名';
+
+      _novelAuthor =
+          document
+              .querySelector('meta[property="og:novel:author"]')
+              ?.attributes['content']
+              ?.trim() ??
+          document.querySelector('.author-name')?.text?.trim() ??
+          document
+              .querySelector('.book-info .author')
+              ?.text
+              ?.replaceAll('作者：', '')
+              .trim() ??
+          document.querySelector('.book-info .author a')?.text?.trim() ??
+          '未知作者';
 
       debugPrint('解析到书名：$_novelTitle');
       debugPrint('解析到作者：$_novelAuthor');
 
-      // ========== 修复2：重新设计卷名和章节解析逻辑 ==========
-      // 定位目录区域（兼容所有可能的选择器）
+      _novelCover =
+          document
+              .querySelector('meta[property="og:image"]')
+              ?.attributes['content']
+              ?.trim() ??
+          "https://gd-hbimg.huaban.com/501f05df7cf3f7d94911329ad33e4365fbee4a3ef777-KBS5Su_fw658";
+      debugPrint('解析到封面：$_novelCover');
+
+      // 定位目录区域
       dom.Element? catalogBox = document.getElementById('J_book_chapter_list');
-      if (catalogBox == null) catalogBox = document.querySelector('.book-chapter-box');
-      if (catalogBox == null) catalogBox = document.querySelector('.chapter-list');
+      if (catalogBox == null)
+        catalogBox = document.querySelector('.book-chapter-box');
+      if (catalogBox == null)
+        catalogBox = document.querySelector('.chapter-list');
       if (catalogBox == null) throw Exception('未找到目录区域，请检查网站结构');
 
       // 方案A：按DOM层级解析（推荐）- 查找所有卷名元素及其对应的章节
-      final volumeSections = catalogBox.querySelectorAll('.volume-item, .chapter-group');
-      
+      final volumeSections = catalogBox.querySelectorAll(
+        '.volume-item, .chapter-group',
+      );
+
       if (volumeSections.isNotEmpty) {
         // 有明确的卷分组结构
         for (var section in volumeSections) {
           // 提取卷名（支持多种卷名选择器）
-          String volName = section.querySelector('h4, .volume-title, .sub-tit, .chapter-group-title')?.text?.trim() ?? '未知卷名';
-          
+          String volName =
+              section
+                  .querySelector(
+                    'h4, .volume-title, .sub-tit, .chapter-group-title',
+                  )
+                  ?.text
+                  ?.trim() ??
+              '未知卷名';
+
           // 提取当前卷下的所有章节
-          final chapterElements = section.querySelectorAll('li a, .chapter-item a');
-          List<NovelChapter> volChapters = [];
-          
+          final chapterElements = section.querySelectorAll(
+            'li a, .chapter-item a',
+          );
+          List<cwm_NovelChapter> volChapters = [];
+
           for (var chapter in chapterElements) {
             final title = chapter.text.trim();
             final url = chapter.attributes['href'] ?? '';
             if (title.isNotEmpty && url.isNotEmpty) {
-              final fullUrl = url.startsWith('http') ? url : 'https://www.ciweimao.com$url';
-              volChapters.add(NovelChapter(title: title, url: fullUrl));
+              final fullUrl = url.startsWith('http')
+                  ? url
+                  : 'https://www.ciweimao.com$url';
+              volChapters.add(cwm_NovelChapter(title: title, url: fullUrl));
             }
           }
-          
+
           if (volChapters.isNotEmpty) {
-            volumes.add(NovelVolume(volumeName: volName, chapters: volChapters));
+            volumes.add(
+              cwm_NovelVolume(volumeName: volName, chapters: volChapters),
+            );
           }
         }
       } else {
         // 方案B：没有明确分组，查找独立的卷名标题+后续章节
         final allElements = catalogBox.children;
         String currentVolName = '全部章节';
-        List<NovelChapter> currentChapters = [];
-        
+        List<cwm_NovelChapter> currentChapters = [];
+
         for (var element in allElements) {
           // 判断是否是卷名标题
-          if (element.localName == 'h4' || 
-              element.classes.contains('sub-tit') || 
+          if (element.localName == 'h4' ||
+              element.classes.contains('sub-tit') ||
               element.classes.contains('volume-title') ||
               element.text.contains('卷')) {
-            
             // 如果已有章节，先保存当前卷
             if (currentChapters.isNotEmpty) {
-              volumes.add(NovelVolume(volumeName: currentVolName, chapters: currentChapters));
+              volumes.add(
+                cwm_NovelVolume(
+                  volumeName: currentVolName,
+                  chapters: currentChapters,
+                ),
+              );
               currentChapters = [];
             }
-            
+
             // 更新当前卷名
             currentVolName = element.text.trim();
-          } 
+          }
           // 判断是否是章节列表项
-          else if (element.localName == 'li' || element.classes.contains('chapter-item')) {
+          else if (element.localName == 'li' ||
+              element.classes.contains('chapter-item')) {
             final chapterLink = element.querySelector('a');
             if (chapterLink != null) {
               final title = chapterLink.text.trim();
               final url = chapterLink.attributes['href'] ?? '';
               if (title.isNotEmpty && url.isNotEmpty) {
-                final fullUrl = url.startsWith('http') ? url : 'https://www.ciweimao.com$url';
-                currentChapters.add(NovelChapter(title: title, url: fullUrl));
+                final fullUrl = url.startsWith('http')
+                    ? url
+                    : 'https://www.ciweimao.com$url';
+                currentChapters.add(
+                  cwm_NovelChapter(title: title, url: fullUrl),
+                );
               }
             }
           }
         }
-        
+
         // 添加最后一卷
         if (currentChapters.isNotEmpty) {
-          volumes.add(NovelVolume(volumeName: currentVolName, chapters: currentChapters));
+          volumes.add(
+            cwm_NovelVolume(
+              volumeName: currentVolName,
+              chapters: currentChapters,
+            ),
+          );
         }
       }
 
       // 保底方案：如果没有解析到任何卷，但有章节，创建默认卷
       if (volumes.isEmpty) {
-        final chapterElements = catalogBox.querySelectorAll('li a, .chapter-item a');
-        List<NovelChapter> allChapters = [];
-        
+        final chapterElements = catalogBox.querySelectorAll(
+          'li a, .chapter-item a',
+        );
+        List<cwm_NovelChapter> allChapters = [];
+
         for (var chapter in chapterElements) {
           final title = chapter.text.trim();
           final url = chapter.attributes['href'] ?? '';
           if (title.isNotEmpty && url.isNotEmpty) {
-            final fullUrl = url.startsWith('http') ? url : 'https://www.ciweimao.com$url';
-            allChapters.add(NovelChapter(title: title, url: fullUrl));
+            final fullUrl = url.startsWith('http')
+                ? url
+                : 'https://www.ciweimao.com$url';
+            allChapters.add(cwm_NovelChapter(title: title, url: fullUrl));
           }
         }
-        
+
         if (allChapters.isNotEmpty) {
-          volumes.add(NovelVolume(volumeName: '全部章節', chapters: allChapters));
+          volumes.add(
+            cwm_NovelVolume(volumeName: '全部章節', chapters: allChapters),
+          );
         } else {
           throw Exception('未找到章节链接，可能是反爬限制');
         }
@@ -421,55 +485,62 @@ class _NovelCatalogPageState extends State<NovelCatalogPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              TextField(
-                controller: _urlController,
-                decoration: InputDecoration(
-                  labelText: '請填入URL',
-                  hintText: 'https://www.ciweimao.com/book/数字',
-                  border: const OutlineInputBorder(
-                    borderRadius: BorderRadius.all(Radius.circular(8)),
-                  ),
-                  prefixIcon: const Icon(Icons.list),
-                  suffixIcon: IconButton(
-                    icon: const Icon(Icons.clear),
-                    onPressed: () => _urlController.clear(),
-                  ),
-                ),
-                style: const TextStyle(fontSize: 16),
-                maxLines: 1,
-              ),
-              const SizedBox(height: 20),
-
-              SizedBox(
-                height: 50,
-                child: ElevatedButton(
-                  onPressed: (_isLoading || !_webViewInitialized)
-                      ? null
-                      : _fetchAndParseCatalog,
-                  style: ElevatedButton.styleFrom(
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
+              Row(
+                children: [
+                  Expanded(
+                    child: TextField(
+                      controller: _urlController,
+                      decoration: InputDecoration(
+                        labelText: '請填入URL',
+                        hintText: 'https://www.ciweimao.com/book/数字',
+                        border: const OutlineInputBorder(
+                          borderRadius: BorderRadius.all(Radius.circular(128)),
+                        ),
+                        prefixIcon: const Icon(Icons.list),
+                        suffixIcon: IconButton(
+                          icon: const Icon(Icons.clear),
+                          onPressed: () => _urlController.clear(),
+                        ),
+                      ),
+                      style: const TextStyle(fontSize: 16),
+                      maxLines: 1,
                     ),
                   ),
-                  child: _isLoading
-                      ? const Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            CircularProgressIndicator(
-                              color: Colors.white,
-                              strokeWidth: 2,
-                            ),
-                            SizedBox(width: 16),
-                            Text('正在解析...', style: TextStyle(fontSize: 18)),
-                          ],
-                        )
-                      : !_webViewInitialized
-                      ? const Text(
-                          'WebView初始化中...',
-                          style: TextStyle(fontSize: 18),
-                        )
-                      : const Text('解析目錄', style: TextStyle(fontSize: 18)),
-                ),
+                  const SizedBox(width: 8),
+
+                  SizedBox(
+                    height: 50,
+                    width: 200,
+                    child: FilledButton(
+                      onPressed: (_isLoading || !_webViewInitialized)
+                          ? null
+                          : _fetchAndParseCatalog,
+                      style: FilledButton.styleFrom(
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(128),
+                        ),
+                      ),
+                      child: _isLoading
+                          ? Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                // CircularProgressIndicator(
+                                //   color: Colors.white,
+                                // ),
+                                ExpressiveLoadingIndicator(
+                                  color: Colors.white.withValues(alpha: 0.5),
+                                ),
+                              ],
+                            )
+                          : !_webViewInitialized
+                          ? const Text(
+                              'WebView初始化中...',
+                              style: TextStyle(fontSize: 18),
+                            )
+                          : const Text('解析目錄', style: TextStyle(fontSize: 18)),
+                    ),
+                  ),
+                ],
               ),
               const SizedBox(height: 16),
 
@@ -486,163 +557,196 @@ class _NovelCatalogPageState extends State<NovelCatalogPage> {
                   ),
                 ),
 
-              if (_novelTitle.isNotEmpty)
-                Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 10),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        '小説信息',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          color: Theme.of(context).colorScheme.tertiary
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        '標題：$_novelTitle',
-                        style: const TextStyle(fontSize: 16),
-                      ),
-                      if (_novelAuthor.isNotEmpty)
-                        Text(
-                          '作者：$_novelAuthor',
-                          style: const TextStyle(
-                            fontSize: 16,
-                            color: Colors.grey,
-                          ),
-                        ),
-                      if (_bookId.isNotEmpty)
-                        Text(
-                          'ID：$_bookId',
-                          style: const TextStyle(
-                            fontSize: 16,
-                            color: Colors.grey,
-                          ),
-                        ),
-                    ],
-                  ),
-                ),
-
-              const SizedBox(height: 20),
-
-              const Text(
-                '目錄',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 10),
-              Container(
-                height: 700,
-                decoration: BoxDecoration(
-                  border: Border.all(color: Colors.grey.shade300),
-                  borderRadius: BorderRadius.circular(8),
-                  color: Colors.white,
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.grey.shade200,
-                      blurRadius: 4,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
-                ),
-                child: _catalogData.isEmpty
-                    ? const Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Text(
-                              '等待開始...',
-                              style: TextStyle(
-                                color: Colors.grey,
-                                fontSize: 16,
-                              ),
-                            ),
-                            
-                          ],
-                        ),
-                      )
-                    : SingleChildScrollView(
-                        padding: const EdgeInsets.all(20),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: _catalogData.map((vol) {
-                            return Column(
+              Row(
+                mainAxisAlignment: MainAxisAlignment.start,
+                children: [
+                  _novelTitle.isNotEmpty
+                      ? Expanded(
+                          flex: 1,
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 10),
+                            child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Container(
-                                  width: double.infinity,
-                                  padding: const EdgeInsets.symmetric(
-                                    vertical: 10,
-                                    horizontal: 15,
-                                  ),
-                                  margin: const EdgeInsets.symmetric(
-                                    vertical: 8,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: Colors.blue.shade50,
-                                    borderRadius: BorderRadius.circular(6),
-                                    border: Border.all(
-                                      color: Colors.blue.shade100,
-                                    ),
-                                  ),
-                                  child: Text(
-                                    '📖 ${vol.volumeName}（共${vol.chapters.length}章）',
-                                    style: const TextStyle(
-                                      fontSize: 17,
-                                      fontWeight: FontWeight.bold,
-                                      color: Colors.blue,
-                                    ),
+                                ClipRRect(
+                                  borderRadius: BorderRadius.circular(24),
+                                  child: Image.network(
+                                    _novelCover,
+                                    width: 200,
+                                    height: 290,
+                                    fit: BoxFit.cover,
                                   ),
                                 ),
-                                Padding(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 10,
-                                    vertical: 5,
+
+                                const SizedBox(height: 8),
+                                Text(
+                                  '小説信息',
+                                  style: TextStyle(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold,
+                                    color: Theme.of(
+                                      context,
+                                    ).colorScheme.tertiary,
                                   ),
-                                  child: Column(
-                                    children: vol.chapters.asMap().entries.map((
-                                      entry,
-                                    ) {
-                                      final idx = entry.key + 1;
-                                      final ch = entry.value;
-                                      return ListTile(
-                                        leading: CircleAvatar(
-                                          radius: 12,
-                                          backgroundColor: Colors.grey.shade200,
-                                          child: Text(
-                                            '$idx',
-                                            style: const TextStyle(
-                                              fontSize: 12,
-                                              color: Colors.grey,
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  '標題：$_novelTitle',
+                                  style: const TextStyle(fontSize: 16),
+                                ),
+                                if (_novelAuthor.isNotEmpty)
+                                  Text(
+                                    '作者：$_novelAuthor',
+                                    style: const TextStyle(
+                                      fontSize: 16,
+                                      color: Colors.grey,
+                                    ),
+                                  ),
+                                if (_bookId.isNotEmpty)
+                                  Text(
+                                    'ID：$_bookId',
+                                    style: const TextStyle(
+                                      fontSize: 16,
+                                      color: Colors.grey,
+                                    ),
+                                  ),
+                              ],
+                            ),
+                          ),
+                        )
+                      : const SizedBox(),
+                  Expanded(
+                    flex: 1,
+                    child: Material(
+                      borderRadius: BorderRadius.circular(24),
+                      clipBehavior: Clip.hardEdge,
+                      color: Theme.of(
+                        context,
+                      ).colorScheme.surfaceContainerLowest,
+                      child: SizedBox(
+                        height: 400,
+                        child: _catalogData.isEmpty
+                            ? const Center(
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Text(
+                                      '等待開始...',
+                                      style: TextStyle(
+                                        color: Colors.grey,
+                                        fontSize: 16,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              )
+                            : SingleChildScrollView(
+                                padding: const EdgeInsets.all(20),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: _catalogData.map((vol) {
+                                    return Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Ink(
+                                          decoration: BoxDecoration(
+                                            color: Theme.of(
+                                              context,
+                                            ).colorScheme.tertiaryContainer,
+                                            borderRadius: BorderRadius.circular(
+                                              128,
+                                            ),
+                                          ),
+                                          child: Container(
+                                            width: double.infinity,
+                                            padding: const EdgeInsets.symmetric(
+                                              vertical: 8,
+                                              horizontal: 24,
+                                            ),
+                                            margin: const EdgeInsets.symmetric(
+                                              vertical: 8,
+                                            ),
+                                            child: Text(
+                                              '${vol.volumeName}（共${vol.chapters.length}章）',
+                                              style: TextStyle(
+                                                fontSize: 17,
+                                                fontWeight: FontWeight.bold,
+                                                color: Theme.of(context)
+                                                    .colorScheme
+                                                    .onTertiaryContainer,
+                                              ),
                                             ),
                                           ),
                                         ),
-                                        title: Text(
-                                          ch.title,
-                                          style: const TextStyle(fontSize: 15),
-                                          overflow: TextOverflow.ellipsis,
-                                        ),
-                                        subtitle: Text(
-                                          ch.url,
-                                          style: TextStyle(
-                                            fontSize: 12,
-                                            color: Colors.grey.shade600,
+                                        Padding(
+                                          padding: const EdgeInsets.symmetric(
+                                            vertical: 5,
                                           ),
-                                          overflow: TextOverflow.ellipsis,
+                                          child: Column(
+                                            children: vol.chapters
+                                                .asMap()
+                                                .entries
+                                                .map((entry) {
+                                                  final idx = entry.key + 1;
+                                                  final ch = entry.value;
+                                                  return ListTile(
+                                                    shape:
+                                                        const RoundedRectangleBorder(
+                                                          borderRadius:
+                                                              BorderRadius.all(
+                                                                Radius.circular(
+                                                                  4,
+                                                                ),
+                                                              ),
+                                                        ),
+                                                    leading: CircleAvatar(
+                                                      radius: 12,
+                                                      backgroundColor:
+                                                          Theme.of(context)
+                                                              .colorScheme
+                                                              .surfaceContainerLow,
+                                                      child: Text(
+                                                        '$idx',
+                                                        style: const TextStyle(
+                                                          fontSize: 12,
+                                                        ),
+                                                      ),
+                                                    ),
+                                                    title: Text(
+                                                      ch.title,
+                                                      style: const TextStyle(
+                                                        fontSize: 15,
+                                                      ),
+                                                      overflow:
+                                                          TextOverflow.ellipsis,
+                                                    ),
+                                                    subtitle: Text(
+                                                      ch.url,
+                                                      style: TextStyle(
+                                                        fontSize: 12,
+                                                        color: Colors
+                                                            .grey
+                                                            .shade600,
+                                                      ),
+                                                      overflow:
+                                                          TextOverflow.ellipsis,
+                                                    ),
+                                                    onTap: () {},
+                                                  );
+                                                })
+                                                .toList(),
+                                          ),
                                         ),
-                                        dense: true,
-                                        visualDensity: VisualDensity.compact,
-                                      );
-                                    }).toList(),
-                                  ),
+                                      ],
+                                    );
+                                  }).toList(),
                                 ),
-                                const Divider(height: 1, color: Colors.grey),
-                              ],
-                            );
-                          }).toList(),
-                        ),
+                              ),
                       ),
+                    ),
+                  ),
+                ],
               ),
             ],
           ),

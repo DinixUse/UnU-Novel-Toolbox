@@ -45,7 +45,7 @@ class _DownloaderPageState extends State<DownloaderPage> with SingleTickerProvid
         controller: _tabController,
         children: _tabTitles.map((title) {
           if(title == "刺蝟貓"){
-            return const NovelCatalogPage();
+            return const cwm_NovelCatalogPage();
           }else{
             return const Center(
               child: Text("施工中"),

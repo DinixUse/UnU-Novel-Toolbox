@@ -55,7 +55,7 @@ class _HomePageState extends State<HomePage>
     const Center(child: Text("起始頁内容", style: TextStyle(fontSize: 24))),
     const DownloaderPage(),
     const Center(child: Text("設定页面内容", style: TextStyle(fontSize: 24))),
-    
+
     //const NovelExtractorPage(),
     const NovelCatalogPage(),
     const Center(child: Text("其他页面", style: TextStyle(fontSize: 24))),
@@ -144,13 +144,15 @@ class _HomePageState extends State<HomePage>
           ..forward();
 
     return Scaffold(
+      backgroundColor: Color.alphaBlend(Theme.of(context).colorScheme.primaryContainer.withOpacity(0.3), Theme.of(context).colorScheme.surfaceContainerLow),
       body: Padding(
         padding: const EdgeInsets.all(8),
         child: Scaffold(
+          backgroundColor: Colors.transparent,
           appBar: AppBar(
             scrolledUnderElevation: 0,
-            surfaceTintColor: Theme.of(context).colorScheme.surface,
-            backgroundColor: Theme.of(context).colorScheme.surface,
+            surfaceTintColor: Colors.transparent,
+            backgroundColor: Colors.transparent,
             title: const Text("UnU Novel Toolbox"),
             flexibleSpace: GestureDetector(
               onPanStart: (_) async => await windowManager.startDragging(),
@@ -158,6 +160,14 @@ class _HomePageState extends State<HomePage>
             ),
             actions: [
               IconButton.filledTonal(
+                style: IconButton.styleFrom(
+                  backgroundColor: Theme.of(
+                    context,
+                  ).colorScheme.tertiaryContainer,
+                  foregroundColor: Theme.of(
+                    context,
+                  ).colorScheme.onTertiaryContainer,
+                ),
                 onPressed: () => windowManager.minimize(),
                 icon: const Icon(Icons.minimize),
               ),
@@ -279,9 +289,15 @@ class _HomePageState extends State<HomePage>
                   position: slideAnimation,
                   child: FadeTransition(
                     opacity: animationController,
-                    child: _pages[_selectedIndex],
+                    child:  Padding(
+                        padding: const EdgeInsets.only(left: 12),
+                        child: ClipRRect(
+                      borderRadius: const BorderRadius.all(Radius.circular(8)),
+                      child: _pages[_selectedIndex],
+                      ),
+                    ),
                   ),
-                ),
+                )
               ),
             ],
           ),
