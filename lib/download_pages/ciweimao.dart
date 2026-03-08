@@ -11,19 +11,7 @@ import 'package:webview_windows/webview_windows.dart';
 import '../widgets/expressive_refresh.dart';
 import '../services/download_manager.dart';
 
-// 章节数据模型
-class cwm_NovelChapter {
-  final String title;
-  final String url;
-  cwm_NovelChapter({required this.title, required this.url});
-}
 
-// 卷数据模型
-class cwm_NovelVolume {
-  final String volumeName;
-  final List<cwm_NovelChapter> chapters;
-  cwm_NovelVolume({required this.volumeName, required this.chapters});
-}
 
 class cwm_NovelCatalogPage extends StatefulWidget {
   const cwm_NovelCatalogPage({super.key});
@@ -518,12 +506,12 @@ class _cwm_NovelCatalogPageState extends State<cwm_NovelCatalogPage> {
                     child: FilledButton(
                       onPressed: (_isLoading || !_webViewInitialized)
                           ? null
-                          : (){
-                            setState(() {
-                              _isTaskAdded = false;
-                            });
-                            _fetchAndParseCatalog();
-                          },
+                          : () {
+                              setState(() {
+                                _isTaskAdded = false;
+                              });
+                              _fetchAndParseCatalog();
+                            },
                       style: FilledButton.styleFrom(
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(128),
@@ -652,196 +640,215 @@ class _cwm_NovelCatalogPageState extends State<cwm_NovelCatalogPage> {
                                 ),
                               )
                             : Scaffold(
-                              backgroundColor: Colors.transparent,
-                              body: SingleChildScrollView(
-                                padding: const EdgeInsets.all(20),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: _catalogData.map((vol) {
-                                    return Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Ink(
-                                          decoration: BoxDecoration(
-                                            color: Theme.of(
-                                              context,
-                                            ).colorScheme.tertiaryContainer,
-                                            borderRadius: BorderRadius.circular(
-                                              128,
+                                backgroundColor: Colors.transparent,
+                                body: SingleChildScrollView(
+                                  padding: const EdgeInsets.all(20),
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: _catalogData.map((vol) {
+                                      return Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Ink(
+                                            decoration: BoxDecoration(
+                                              color: Theme.of(
+                                                context,
+                                              ).colorScheme.tertiaryContainer,
+                                              borderRadius:
+                                                  BorderRadius.circular(128),
                                             ),
-                                          ),
-                                          child: Container(
-                                            width: double.infinity,
-                                            padding: const EdgeInsets.symmetric(
-                                              vertical: 8,
-                                              horizontal: 24,
-                                            ),
-                                            margin: const EdgeInsets.symmetric(
-                                              vertical: 8,
-                                            ),
-                                            child: Text(
-                                              '${vol.volumeName}（共${vol.chapters.length}章）',
-                                              style: TextStyle(
-                                                fontSize: 17,
-                                                fontWeight: FontWeight.bold,
-                                                color: Theme.of(context)
-                                                    .colorScheme
-                                                    .onTertiaryContainer,
+                                            child: Container(
+                                              width: double.infinity,
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                    vertical: 8,
+                                                    horizontal: 24,
+                                                  ),
+                                              margin:
+                                                  const EdgeInsets.symmetric(
+                                                    vertical: 8,
+                                                  ),
+                                              child: Text(
+                                                '${vol.volumeName}（共${vol.chapters.length}章）',
+                                                style: TextStyle(
+                                                  fontSize: 17,
+                                                  fontWeight: FontWeight.bold,
+                                                  color: Theme.of(context)
+                                                      .colorScheme
+                                                      .onTertiaryContainer,
+                                                ),
                                               ),
                                             ),
                                           ),
-                                        ),
-                                        Padding(
-                                          padding: const EdgeInsets.symmetric(
-                                            vertical: 5,
-                                          ),
-                                          child: Column(
-                                            children: vol.chapters.asMap().entries.map((
-                                              entry,
-                                            ) {
-                                              final idx = entry.key + 1;
-                                              final ch = entry.value;
-                                              return ListTile(
-                                                shape:
-                                                    const RoundedRectangleBorder(
-                                                      borderRadius:
-                                                          BorderRadius.all(
-                                                            Radius.circular(4),
-                                                          ),
-                                                    ),
-                                                leading: CircleAvatar(
-                                                  radius: 12,
-                                                  backgroundColor:
-                                                      Theme.of(context)
-                                                          .colorScheme
-                                                          .surfaceContainerLow,
-                                                  child: Text(
-                                                    '$idx',
-                                                    style: const TextStyle(
-                                                      fontSize: 12,
-                                                    ),
-                                                  ),
-                                                ),
-                                                title: Text(
-                                                  ch.title,
-                                                  style: const TextStyle(
-                                                    fontSize: 15,
-                                                  ),
-                                                  overflow:
-                                                      TextOverflow.ellipsis,
-                                                ),
-                                                subtitle: Text(
-                                                  ch.url,
-                                                  style: TextStyle(
-                                                    fontSize: 12,
-                                                    color: Colors.grey.shade600,
-                                                  ),
-                                                  overflow:
-                                                      TextOverflow.ellipsis,
-                                                ),
-
-                                                onTap: () async {
-                                                  void Function()?
-                                                  closeLoadingDialog;
-                                                  showDialog(
-                                                    barrierDismissible: false,
-                                                    context: context,
-                                                    builder: (context) {
-                                                      closeLoadingDialog = () =>
-                                                          Navigator.pop(
-                                                            context,
-                                                          );
-                                                      return Container(
-                                                        alignment:
-                                                            Alignment.center,
-                                                        child:
-                                                            const ExpressiveLoadingIndicator(
-                                                              contained: true,
-                                                            ),
-                                                      );
-                                                    },
-                                                  );
-
-                                                  String content = "";
-                                                  final cwm_NovelExtractor
-                                                  extractor =
-                                                      cwm_NovelExtractor();
-                                                  bool isInitSuccess =
-                                                      await extractor
-                                                          .initialize();
-
-                                                  if (isInitSuccess) {
-                                                    content = await extractor
-                                                        .getNovelContent(
-                                                          ch.url,
-                                                        );
-
-                                                    if (content.contains(
-                                                          '失败',
-                                                        ) ||
-                                                        content.contains(
-                                                          '未找到',
-                                                        ) ||
-                                                        content.contains(
-                                                          'URL格式错误',
-                                                        )) {
-                                                      print('提取失败：$content');
-                                                    } else {
-                                                      print(
-                                                        '提取成功，内容长度：${content.length} 字符',
-                                                      );
-                                                    }
-
-                                                    extractor.dispose();
-                                                  } else {
-                                                    print('工具类初始化失败，无法提取内容');
-                                                  }
-                                                  closeLoadingDialog!();
-
-                                                  showDialog(
-                                                    context: context,
-                                                    builder: (context) {
-                                                      return AlertDialog(
-                                                        title: Row(
-                                                          mainAxisAlignment:
-                                                              MainAxisAlignment
-                                                                  .spaceBetween,
-                                                          children: [
-                                                            Text(ch.title),
-                                                            IconButton(
-                                                              onPressed: () =>
-                                                                  Navigator.of(
-                                                                    context,
-                                                                  ).pop(),
-                                                              icon: const Icon(
-                                                                Icons.close,
+                                          Padding(
+                                            padding: const EdgeInsets.symmetric(
+                                              vertical: 5,
+                                            ),
+                                            child: Column(
+                                              children: vol.chapters.asMap().entries.map((
+                                                entry,
+                                              ) {
+                                                final idx = entry.key + 1;
+                                                final ch = entry.value;
+                                                return ListTile(
+                                                  shape:
+                                                      const RoundedRectangleBorder(
+                                                        borderRadius:
+                                                            BorderRadius.all(
+                                                              Radius.circular(
+                                                                4,
                                                               ),
                                                             ),
-                                                          ],
-                                                        ),
-                                                        content:
-                                                            SingleChildScrollView(
-                                                              child:
-                                                                  SelectableText(
-                                                                    content,
-                                                                  ),
-                                                            ),
-                                                      );
-                                                    },
-                                                  );
-                                                },
-                                                //trailing: ExpressiveLoadingIndicator(),
-                                              );
-                                            }).toList(),
+                                                      ),
+                                                  leading: CircleAvatar(
+                                                    radius: 12,
+                                                    backgroundColor:
+                                                        Theme.of(context)
+                                                            .colorScheme
+                                                            .surfaceContainerLow,
+                                                    child: Text(
+                                                      '$idx',
+                                                      style: const TextStyle(
+                                                        fontSize: 12,
+                                                      ),
+                                                    ),
+                                                  ),
+                                                  title: Text(
+                                                    ch.title,
+                                                    style: const TextStyle(
+                                                      fontSize: 15,
+                                                    ),
+                                                    overflow:
+                                                        TextOverflow.ellipsis,
+                                                  ),
+                                                  subtitle: Text(
+                                                    ch.url,
+                                                    style: TextStyle(
+                                                      fontSize: 12,
+                                                      color:
+                                                          Colors.grey.shade600,
+                                                    ),
+                                                    overflow:
+                                                        TextOverflow.ellipsis,
+                                                  ),
+
+                                                  onTap: () async {
+                                                    void Function()?
+                                                    closeLoadingDialog;
+                                                    showDialog(
+                                                      barrierDismissible: false,
+                                                      context: context,
+                                                      builder: (context) {
+                                                        closeLoadingDialog =
+                                                            () => Navigator.pop(
+                                                              context,
+                                                            );
+                                                        return Container(
+                                                          alignment:
+                                                              Alignment.center,
+                                                          child:
+                                                              const ExpressiveLoadingIndicator(
+                                                                contained: true,
+                                                              ),
+                                                        );
+                                                      },
+                                                    );
+
+                                                    String content = "";
+                                                    final cwm_NovelExtractor
+                                                    extractor =
+                                                        cwm_NovelExtractor();
+                                                    bool isInitSuccess =
+                                                        await extractor
+                                                            .initialize();
+
+                                                    if (isInitSuccess) {
+                                                      content = await extractor
+                                                          .getNovelContent(
+                                                            ch.url,
+                                                          );
+
+                                                      if (content.contains(
+                                                            '失败',
+                                                          ) ||
+                                                          content.contains(
+                                                            '未找到',
+                                                          ) ||
+                                                          content.contains(
+                                                            'URL格式错误',
+                                                          )) {
+                                                        print('提取失败：$content');
+                                                      } else {
+                                                        print(
+                                                          '提取成功，内容长度：${content.length} 字符',
+                                                        );
+                                                      }
+
+                                                      extractor.dispose();
+                                                    } else {
+                                                      print('工具类初始化失败，无法提取内容');
+                                                    }
+                                                    closeLoadingDialog!();
+
+                                                    // 測試用 開始
+                                                    // File txtFile = File(
+                                                    //   "C:/Users/Dinix/Desktop/example.txt",
+                                                    // );
+
+                                                    // await txtFile.writeAsString(
+                                                    //   content,
+                                                    //   encoding:
+                                                    //       Encoding.getByName(
+                                                    //         'utf-8',
+                                                    //       )!,
+                                                    // );
+                                                    // 測試用 結束
+
+                                                    showDialog(
+                                                      context: context,
+                                                      builder: (context) {
+                                                        return AlertDialog(
+                                                          title: Row(
+                                                            mainAxisAlignment:
+                                                                MainAxisAlignment
+                                                                    .spaceBetween,
+                                                            children: [
+                                                              Text(ch.title),
+                                                              IconButton(
+                                                                onPressed: () =>
+                                                                    Navigator.of(
+                                                                      context,
+                                                                    ).pop(),
+                                                                icon: const Icon(
+                                                                  Icons.close,
+                                                                ),
+                                                              ),
+                                                            ],
+                                                          ),
+                                                          content:
+                                                              SingleChildScrollView(
+                                                                child:
+                                                                    SelectableText(
+                                                                      content,
+                                                                    ),
+                                                              ),
+                                                        );
+                                                      },
+                                                    );
+                                                  },
+                                                  //trailing: ExpressiveLoadingIndicator(),
+                                                );
+                                              }).toList(),
+                                            ),
                                           ),
-                                        ),
-                                      ],
-                                    );
-                                  }).toList(),
+                                        ],
+                                      );
+                                    }).toList(),
+                                  ),
                                 ),
                               ),
-                            )
                       ),
                     ),
                   ),
@@ -914,13 +921,15 @@ class _cwm_NovelCatalogPageState extends State<cwm_NovelCatalogPage> {
                       //   print('工具类初始化失败，无法提取内容');
                       // }
 
+                      final String savePath = r'D:\\Flutter_Testing\\cwmxx\\u1';
                       DownloadManager.instance.addDownloadTask(
-                        TaskType.ciweimao,
-                        _novelCover,
-                        _novelAuthor,
-                        _novelTitle,
-                        _catalogData,
-                        _isEpub,
+                        taskType:  TaskType.ciweimao,
+                        coverUrl:  _novelCover,
+                        novelAuthor:  _novelAuthor,
+                        novelTitle:  _novelTitle,
+                        volumes:  _catalogData,
+                        isEpub:  _isEpub,
+                        savePath: savePath
                       );
 
                       setState(() {
@@ -928,7 +937,11 @@ class _cwm_NovelCatalogPageState extends State<cwm_NovelCatalogPage> {
                       });
                     }
                   : null,
-              child: _catalogData.isEmpty ? const Text("等待開始") : _isTaskAdded ? const Text("已添加") : const Text("添加到下載列表"),
+              child: _catalogData.isEmpty
+                  ? const Text("等待開始")
+                  : _isTaskAdded
+                  ? const Text("已添加")
+                  : const Text("添加到下載列表"),
             ),
           ],
         ),

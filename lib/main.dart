@@ -35,7 +35,6 @@ void main() async {
 
   windowManager.addListener(MyWindowListener());
 
-  
   DownloadManager.instance.startDaemon();
 
   runApp(const MyApp());
@@ -48,7 +47,7 @@ Future<void> _saveWindowPosition() async {
     // 获取当前窗口的位置（x, y）和尺寸（width, height）
     final position = await windowManager.getPosition();
     final size = await windowManager.getSize();
-    
+
     // 保存到本地
     await prefs.setDouble('window_x', position.dx);
     await prefs.setDouble('window_y', position.dy);
@@ -68,7 +67,7 @@ Future<void> _restoreWindowPosition() async {
     final y = prefs.getDouble('window_y');
     final width = prefs.getDouble('window_width') ?? 1208;
     final height = prefs.getDouble('window_height') ?? 789;
-    
+
     // 如果有保存的位置，恢复位置；否则保持居中
     if (x != null && y != null) {
       // 先设置尺寸，再设置位置（避免尺寸异常导致位置偏移）
@@ -94,7 +93,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Flutter Demo',
+      title: 'UnU Novel Toolbox',
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
       ),
@@ -229,7 +228,14 @@ class _HomePageState extends State<HomePage>
               Stack(
                 children: [
                   IconButton.filledTonal(
-                    onPressed: () {},
+                    onPressed: () {
+                      // Navigator.push(
+                      //   context,
+                      //   MaterialPageRoute(
+                      //     builder: (context) => const AllDownloadTasksPage(),
+                      //   ),
+                      // );
+                    },
                     icon: const Icon(Icons.download_outlined),
                     style: IconButton.styleFrom(
                       backgroundColor: Theme.of(

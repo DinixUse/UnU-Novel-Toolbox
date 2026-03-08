@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:html/parser.dart' show parse;
 import 'package:html/dom.dart' as dom;
@@ -5,6 +7,253 @@ import 'package:clipboard/clipboard.dart';
 import 'package:webview_windows/webview_windows.dart';
 import 'dart:async';
 
+import 'services/download_manager.dart';
+
+/// 測試下載頁面 開始
+
+
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'dart:math' as math;
+
+// 导入你原有的代码（TaskModel、DownloadManager、枚举等）
+// 这里假设你已经导入了这些类
+
+// ========== 环形进度条组件 ==========
+class DownloadProgressRing extends StatefulWidget {
+  final TaskModel task;
+  final double size; // 进度条大小
+  final Color primaryColor; // 主色
+  final Color backgroundColor; // 背景色
+  final double strokeWidth; // 线条宽度
+
+  const DownloadProgressRing({
+    super.key,
+    required this.task,
+    this.size = 120.0,
+    this.primaryColor = Colors.blue,
+    this.backgroundColor = Colors.grey,
+    this.strokeWidth = 8.0,
+  });
+
+  @override
+  State<DownloadProgressRing> createState() => _DownloadProgressRingState();
+}
+
+class _DownloadProgressRingState extends State<DownloadProgressRing> {
+  late Map<String, dynamic> _progressData;
+  late StreamSubscription<void> _subscription;
+
+  @override
+  void initState() {
+    super.initState();
+    // 初始化进度数据
+    _progressData = DownloadManager.instance.getTaskProgress(widget.task);
+    
+    // 监听任务变化
+    _subscription = DownloadManager.instance.taskChangedStream.listen((_) {
+      if (mounted) {
+        setState(() {
+          _progressData = DownloadManager.instance.getTaskProgress(widget.task);
+        });
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _subscription.cancel();
+    super.dispose();
+  }
+
+  // 获取状态对应的文本和颜色
+  Map<String, dynamic> _getStatusInfo() {
+    final status = _progressData['status'] ?? 'pending';
+    
+    switch (status) {
+      case 'pending':
+        return {'text': '等待中', 'color': Colors.grey};
+      case 'downloading':
+        return {'text': '下载中', 'color': widget.primaryColor};
+      case 'paused':
+        return {'text': '已暂停', 'color': Colors.orange};
+      case 'completed':
+        return {'text': '已完成', 'color': Colors.green};
+      case 'failed':
+        return {'text': '失败', 'color': Colors.red};
+      case 'cancelled':
+        return {'text': '已取消', 'color': Colors.grey};
+      default:
+        return {'text': '未知', 'color': Colors.grey};
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final progress = _progressData['progress'] ?? 0.0;
+    final currentChapter = _progressData['currentChapter'] ?? '';
+    final error = _progressData['error'] ?? '';
+    final statusInfo = _getStatusInfo();
+    final completed = _progressData['completed'] ?? 0;
+    final total = _progressData['total'] ?? 0;
+
+    return SizedBox(
+      width: widget.size,
+      height: widget.size,
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          // 环形进度条背景
+          SizedBox(
+            width: widget.size,
+            height: widget.size,
+            child: CircularProgressIndicator(
+              value: 1.0,
+              strokeWidth: widget.strokeWidth,
+              valueColor: AlwaysStoppedAnimation<Color>(widget.backgroundColor),
+              backgroundColor: Colors.transparent,
+            ),
+          ),
+          // 环形进度条前景
+          SizedBox(
+            width: widget.size,
+            height: widget.size,
+            child: CircularProgressIndicator(
+              value: progress,
+              strokeWidth: widget.strokeWidth,
+              valueColor: AlwaysStoppedAnimation<Color>(statusInfo['color']),
+              backgroundColor: Colors.transparent,
+              strokeCap: StrokeCap.round,
+            ),
+          ),
+          // 中心文本信息
+          Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              // 进度百分比
+              Text(
+                '${(progress * 100).toStringAsFixed(1)}%',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: statusInfo['color'],
+                ),
+              ),
+              const SizedBox(height: 4),
+              // 章节进度
+              Text(
+                '$completed/$total',
+                style: const TextStyle(
+                  fontSize: 12,
+                  color: Colors.grey,
+                ),
+              ),
+              const SizedBox(height: 8),
+              // 状态文本
+              Text(
+                statusInfo['text'],
+                style: TextStyle(
+                  fontSize: 14,
+                  color: statusInfo['color'],
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              // 当前下载章节（最多显示一行）
+              if (currentChapter.isNotEmpty)
+                Padding(
+                  padding: const EdgeInsets.only(top: 4.0),
+                  child: Text(
+                    currentChapter,
+                    style: const TextStyle(
+                      fontSize: 10,
+                      color: Colors.grey,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              // 错误信息（如果有）
+              if (error.isNotEmpty)
+                Padding(
+                  padding: const EdgeInsets.only(top: 4.0),
+                  child: Text(
+                    error,
+                    style: const TextStyle(
+                      fontSize: 10,
+                      color: Colors.red,
+                    ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ========== 使用示例 ==========
+class DownloadTaskScreen extends StatelessWidget {
+  final TaskModel task;
+
+  const DownloadTaskScreen({super.key, required this.task});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('下载进度: ${task.novelTitle}'),
+      ),
+      body: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            // 使用环形进度条
+            DownloadProgressRing(
+              task: task,
+              size: 150.0,
+              primaryColor: Colors.deepPurple,
+              strokeWidth: 10.0,
+            ),
+            const SizedBox(height: 30),
+            // 控制按钮
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                ElevatedButton(
+                  onPressed: () {
+                    // 启动下载守护进程（如果未启动）
+                    if (!DownloadManager.instance.isDaemonRunning) {
+                      DownloadManager.instance.startDaemon();
+                    }
+                  },
+                  child: const Text('开始下载'),
+                ),
+                const SizedBox(width: 10),
+                ElevatedButton(
+                  onPressed: () {
+                    DownloadManager.instance.stopDaemon();
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.orange,
+                  ),
+                  child: const Text('暂停下载'),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+
+
+/// 測試下載頁面 結束
 
 class NovelExtractorPage extends StatefulWidget {
   const NovelExtractorPage({super.key});

@@ -43,6 +43,7 @@ dependencies:
   webview_windows: ^0.3.0
   material_new_shapes: ^1.0.0
   shared_preferences: ^2.2.2
+  path: ^1.8.3
   # fluent_ui: ^4.14.0
 
 dev_dependencies:
