@@ -48,18 +48,20 @@ class cwm_NovelExtractor {
     try {
       // 3. 加载URL
       await _webviewController.loadUrl(url);
-      
+
       // 4. 等待页面渲染（可根据网络情况调整时长）
       await Future.delayed(const Duration(seconds: 6));
-      
+
       // 5. 获取页面HTML
-      final dynamic result = await _webviewController.executeScript('document.documentElement.outerHTML');
+      final dynamic result = await _webviewController.executeScript(
+        'document.documentElement.outerHTML',
+      );
       final String htmlContent = result?.toString() ?? '';
-      
+
       if (htmlContent.isEmpty) {
         return '获取页面HTML失败，返回内容为空';
       }
-      
+
       // 6. 解析提取内容
       return _extractNovelFromHtml(htmlContent);
     } catch (e) {
@@ -86,7 +88,7 @@ class cwm_NovelExtractor {
   String _extractNovelFromHtml(String html) {
     try {
       final document = parse(html);
-      
+
       final contentDiv = document.getElementById('J_BookRead');
       if (contentDiv == null) {
         return '未找到小说内容区域（J_BookRead），可能页面结构已变更';
@@ -118,18 +120,18 @@ class cwm_NovelExtractor {
       }
 
       final List<String> cleanContent = [];
-      
+
       for (var p in paragraphs) {
         String text = p.text.trim();
-        
+
         // 仅保留基础的文本清理
         text = text
             .replaceAll(RegExp(r'\s+'), ' ') // 清理多余空白
             .trim();
-        
+
         // 过滤空内容和作者说
-        if (text.isNotEmpty && 
-            text != '———' && 
+        if (text.isNotEmpty &&
+            text != '———' &&
             !p.classes.contains('author_say')) {
           cleanContent.add(text);
         }
@@ -146,35 +148,106 @@ class cwm_NovelExtractor {
   }
 }
 
-class cwm_TaskModel {
+enum TaskType { ciweimao, jjwxc, yamibo }
+
+enum DownloadTaskStatus {
+  pending,
+  downloading,
+  paused,
+  completed,
+  failed,
+  cancelled
+}
+
+
+class TaskModel {
+  TaskType taskType;
   String coverUrl;
   String novelAuthor;
   String novelTitle;
   List<cwm_NovelVolume> volumes;
   bool isEpub;
 
-  cwm_TaskModel({required this.coverUrl, required this.novelAuthor, required this.novelTitle, required this.volumes, required this.isEpub});
+  TaskModel({
+    required this.taskType,
+    required this.coverUrl,
+    required this.novelAuthor,
+    required this.novelTitle,
+    required this.volumes,
+    required this.isEpub,
+  });
 }
 
-class cwm_DownloadManager {
-  List<cwm_TaskModel> tasks = [];
+class DownloadManager {
+  List<TaskModel> tasks = [];
 
-  static final cwm_DownloadManager instance = cwm_DownloadManager._internal();
-  
-  cwm_DownloadManager._internal();
+  static final DownloadManager instance = DownloadManager._internal();
+  DownloadManager._internal();
+
+  final StreamController<void> _taskChangedController = StreamController<void>.broadcast();
+  bool _daemonRunning = false;
+
+  void startDaemon() {
+    if (_daemonRunning) return;
+    _daemonRunning = true;
+    print("Download Manager started.");
+    _runDaemon();
+  }
+
+  void stopDaemon() {
+    _daemonRunning = false;
+    _taskChangedController.close();
+  }
+
+  Future<void> _runDaemon() async {
+    while (_daemonRunning) {
+      try {
+        // 無任務則阻塞等待
+        if (tasks.isEmpty) {
+          await _taskChangedController.stream.first;
+        }
+
+        // 有任務則處理（複製列表避免并發修改）
+        final tasksToProcess = List<TaskModel>.from(tasks);
+        for (final task in tasksToProcess) {
+          
+          // [TODO] 下載實現
+          
+          // 處理完成后移除任務（記得取消注釋）
+          tasks.remove(task);
+        }
+      } catch (e) {
+        await Future.delayed(const Duration(seconds: 1));
+      }
+    }
+  }
 
   void addDownloadTask(
+    TaskType taskType,
     String coverUrl,
     String novelAuthor,
     String novelTitle,
     List<cwm_NovelVolume> volumes,
-    bool isEpub
+    bool isEpub,
   ) {
-    tasks.add(cwm_TaskModel(coverUrl: coverUrl, novelAuthor: novelAuthor, novelTitle: novelTitle, volumes: volumes, isEpub: isEpub));
-    
+    tasks.add(
+      TaskModel(
+        taskType: taskType,
+        coverUrl: coverUrl,
+        novelAuthor: novelAuthor,
+        novelTitle: novelTitle,
+        volumes: volumes,
+        isEpub: isEpub,
+      ),
+    );
+
+    _taskChangedController.sink.add(null);
+
     printAllTasks();
   }
 
+
+  /// 沒什麽用的函數而且佔資源較大只在[Debug]時調用
   void printAllTasks({bool showChapterUrl = false}) {
     // 1. 打印标题和总数
     print('\n=====================================');
@@ -192,8 +265,11 @@ class cwm_DownloadManager {
     for (int taskIdx = 0; taskIdx < tasks.length; taskIdx++) {
       final task = tasks[taskIdx];
       // 计算总章节数（所有卷的章节总和）
-      final totalChapters = task.volumes.fold(0, (sum, vol) => sum + vol.chapters.length);
-      
+      final totalChapters = task.volumes.fold(
+        0,
+        (sum, vol) => sum + vol.chapters.length,
+      );
+
       print('\n【任务 ${taskIdx + 1}】');
       print('  📖 书名：${task.novelTitle}');
       print('  ✍️  作者：${task.novelAuthor}');
@@ -205,17 +281,17 @@ class cwm_DownloadManager {
       // 4. 遍历当前任务的所有卷
       for (int volIdx = 0; volIdx < task.volumes.length; volIdx++) {
         final volume = task.volumes[volIdx];
-        print('    ├─ 【卷 ${volIdx + 1}】${volume.volumeName}（${volume.chapters.length}章）');
+        print(
+          '    ├─ 【卷 ${volIdx + 1}】${volume.volumeName}（${volume.chapters.length}章）',
+        );
 
         // 5. 遍历当前卷下的所有章节
         for (int chIdx = 0; chIdx < volume.chapters.length; chIdx++) {
           final chapter = volume.chapters[chIdx];
           print('    │  └─ ${chIdx + 1}. ${chapter.title}');
-          
+
           // 可选：显示章节URL
-          if (showChapterUrl) {
-            print('    │     └─ URL：${chapter.url}');
-          }
+          print('    │     └─ URL：${chapter.url}');
         }
       }
     }

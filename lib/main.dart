@@ -3,6 +3,9 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 //import 'package:liquid_glass_widgets/liquid_glass_widgets.dart';
 import 'package:window_manager/window_manager.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
+import 'services/download_manager.dart';
 
 import 'testing.dart';
 import 'testing_2.dart';
@@ -17,17 +20,72 @@ void main() async {
   WindowOptions windowOptions = const WindowOptions(
     size: Size(1208, 789),
     minimumSize: Size(1208, 789),
+    center: true,
     backgroundColor: Colors.transparent,
     skipTaskbar: false,
     titleBarStyle: TitleBarStyle.hidden,
   );
 
   windowManager.waitUntilReadyToShow(windowOptions, () async {
+    await _restoreWindowPosition();
+
     await windowManager.show();
     await windowManager.focus();
   });
 
+  windowManager.addListener(MyWindowListener());
+
+  
+  DownloadManager.instance.startDaemon();
+
   runApp(const MyApp());
+}
+
+// 保存窗口位置和尺寸到本地
+Future<void> _saveWindowPosition() async {
+  try {
+    final prefs = await SharedPreferences.getInstance();
+    // 获取当前窗口的位置（x, y）和尺寸（width, height）
+    final position = await windowManager.getPosition();
+    final size = await windowManager.getSize();
+    
+    // 保存到本地
+    await prefs.setDouble('window_x', position.dx);
+    await prefs.setDouble('window_y', position.dy);
+    await prefs.setDouble('window_width', size.width);
+    await prefs.setDouble('window_height', size.height);
+  } catch (e) {
+    debugPrint("保存窗口位置失败: $e");
+  }
+}
+
+// 从本地恢复窗口位置和尺寸
+Future<void> _restoreWindowPosition() async {
+  try {
+    final prefs = await SharedPreferences.getInstance();
+    // 读取本地保存的值（带默认值，首次启动用默认值）
+    final x = prefs.getDouble('window_x');
+    final y = prefs.getDouble('window_y');
+    final width = prefs.getDouble('window_width') ?? 1208;
+    final height = prefs.getDouble('window_height') ?? 789;
+    
+    // 如果有保存的位置，恢复位置；否则保持居中
+    if (x != null && y != null) {
+      // 先设置尺寸，再设置位置（避免尺寸异常导致位置偏移）
+      await windowManager.setSize(Size(width, height));
+      await windowManager.setPosition(Offset(x, y));
+    }
+  } catch (e) {
+    debugPrint("恢复窗口位置失败: $e");
+  }
+}
+
+class MyWindowListener extends WindowListener {
+  @override
+  void onWindowClose() {
+    // 保存位置完成后再销毁窗口
+    _saveWindowPosition().then((_) => windowManager.destroy());
+  }
 }
 
 class MyApp extends StatelessWidget {
@@ -206,7 +264,10 @@ class _HomePageState extends State<HomePage>
               ),
               const SizedBox(width: 4),
               IconButton.filled(
-                onPressed: () => exit(0),
+                onPressed: () async {
+                  //await _saveWindowPosition();
+                  windowManager.close();
+                },
                 icon: Icon(
                   Icons.close,
                   color: Theme.of(context).colorScheme.onPrimary,

@@ -42,6 +42,7 @@ dependencies:
   url_launcher: ^6.2.5  # URL校验辅助
   webview_windows: ^0.3.0
   material_new_shapes: ^1.0.0
+  shared_preferences: ^2.2.2
   # fluent_ui: ^4.14.0
 
 dev_dependencies:

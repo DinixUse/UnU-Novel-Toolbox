@@ -914,7 +914,8 @@ class _cwm_NovelCatalogPageState extends State<cwm_NovelCatalogPage> {
                       //   print('工具类初始化失败，无法提取内容');
                       // }
 
-                      cwm_DownloadManager.instance.addDownloadTask(
+                      DownloadManager.instance.addDownloadTask(
+                        TaskType.ciweimao,
                         _novelCover,
                         _novelAuthor,
                         _novelTitle,
