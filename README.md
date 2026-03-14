@@ -1,4 +1,8 @@
-# UnU Novel Toolbox
+<div align="center">
+  <img src="https://github.com/DinixUse/UnU-Novel-Toolbox/blob/main/assets/img/Cirno.png" alt="UnU Novel Toolbox Logo" width="120" />
+  <h1>UnU Novel Toolbox</h1>
+  <p>小説解析・ダウンロードツール（Flutter Windowsデスクトップアプリ）</p>
+</div>
 
 UnU Novel Toolbox 是一個 Flutter Windows 桌面應用，針對小說下載與解析做優化。主要功能如下：
 
