@@ -33,7 +33,6 @@ void main() async {
 
   windowManager.addListener(MyWindowListener());
 
-  
   DownloadManager.instance.startDaemon();
   runApp(const MyApp());
 }
@@ -125,11 +124,7 @@ class _HomePageState extends State<HomePage>
       icon: Icons.conveyor_belt,
       page: Center(child: Text("轉換工具頁内容", style: TextStyle(fontSize: 24))),
     ),
-    const AppTab(
-      title: "設定",
-      icon: Icons.settings,
-      page: SettingsPage(),
-    ),
+    const AppTab(title: "設定", icon: Icons.settings, page: SettingsPage()),
     const AppTab(
       title: "測試頁面",
       icon: Icons.toc_outlined,
@@ -208,147 +203,179 @@ class _HomePageState extends State<HomePage>
         scheme.primaryContainer.withOpacity(0.3),
         scheme.surfaceContainerLow,
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(8),
-        child: Scaffold(
-          backgroundColor: Colors.transparent,
-          appBar: AppBar(
-            leading: Container(
-              alignment: Alignment.center,
-              child: Image.asset("assets/img/Cirno.png", width: 36, height: 36),
-            ),
-            scrolledUnderElevation: 0,
-            surfaceTintColor: Colors.transparent,
-            backgroundColor: Colors.transparent,
-            title: const Text("UnU Novel Toolbox"),
-            flexibleSpace: GestureDetector(
-              onPanStart: (_) => windowManager.startDragging(),
-            ),
-            actions: [
-              IconButton.filledTonal(
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => const MainDownloadScreen(),
-                    ),
-                  );
-                },
-                icon: const Icon(Icons.download_outlined),
-                style: IconButton.styleFrom(
-                  backgroundColor: scheme.tertiaryContainer,
-                  foregroundColor: scheme.onTertiaryContainer,
+      body: Stack(
+        children: [
+          Positioned.fill(
+            child: Opacity(
+              opacity:
+                  UserPreferences
+                          .instance
+                          .currentSettingsMap["scaffold_background_image_url"] ==
+                      ""
+                  ? 1.0
+                  : UserPreferences
+                        .instance
+                        .currentSettingsMap["image_opacity"],
+              child: Image.file(
+                File(
+                  UserPreferences
+                      .instance
+                      .currentSettingsMap["scaffold_background_image_url"],
                 ),
+                fit: BoxFit.cover,
+                errorBuilder: (context, error, stackTrace) {
+                  return const SizedBox();
+                },
               ),
-              const SizedBox(width: 4),
-              IconButton.filledTonal(
-                onPressed: () => windowManager.minimize(),
-                icon: const Icon(Icons.minimize),
-              ),
-              const SizedBox(width: 4),
-              IconButton.filledTonal(
-                onPressed: () async => await windowManager.isMaximized()
-                    ? windowManager.unmaximize()
-                    : windowManager.maximize(),
-                icon: const Icon(Icons.crop_square_outlined),
-              ),
-              const SizedBox(width: 4),
-              IconButton.filled(
-                onPressed: () => windowManager.close(),
-                icon: Icon(Icons.close, color: scheme.onPrimary),
-              ),
-            ],
-            actionsPadding: const EdgeInsets.only(right: 8),
+            ),
           ),
-          body: Row(
-            children: [
-              SizedBox(
-                width: 256,
-                child: Padding(
-                  padding: const EdgeInsets.all(8),
-                  child: Stack(
-                    children: [
-                      AnimatedPositioned(
-                        duration: const Duration(milliseconds: 550),
-                        curve: Curves.elasticOut,
-                        top: _selectedTop,
-                        left: 0,
-                        right: 0,
-                        height: _itemHeight,
-                        child: IgnorePointer(
-                          child: Ink(
-                            decoration: BoxDecoration(
-                              borderRadius: const BorderRadius.all(
-                                Radius.circular(128),
+
+          Padding(
+            padding: const EdgeInsets.all(8),
+            child: Scaffold(
+              backgroundColor: Colors.transparent,
+              appBar: AppBar(
+                leading: Container(
+                  alignment: Alignment.center,
+                  child: Image.asset(
+                    "assets/img/Cirno.png",
+                    width: 36,
+                    height: 36,
+                  ),
+                ),
+                scrolledUnderElevation: 0,
+                surfaceTintColor: Colors.transparent,
+                backgroundColor: Colors.transparent,
+                title: const Text("UnU Novel Toolbox"),
+                flexibleSpace: GestureDetector(
+                  onPanStart: (_) => windowManager.startDragging(),
+                ),
+                actions: [
+                  IconButton.filledTonal(
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const MainDownloadScreen(),
+                        ),
+                      );
+                    },
+                    icon: const Icon(Icons.download_outlined),
+                    style: IconButton.styleFrom(
+                      backgroundColor: scheme.tertiaryContainer,
+                      foregroundColor: scheme.onTertiaryContainer,
+                    ),
+                  ),
+                  const SizedBox(width: 4),
+                  IconButton.filledTonal(
+                    onPressed: () => windowManager.minimize(),
+                    icon: const Icon(Icons.minimize),
+                  ),
+                  const SizedBox(width: 4),
+                  IconButton.filledTonal(
+                    onPressed: () async => await windowManager.isMaximized()
+                        ? windowManager.unmaximize()
+                        : windowManager.maximize(),
+                    icon: const Icon(Icons.crop_square_outlined),
+                  ),
+                  const SizedBox(width: 4),
+                  IconButton.filled(
+                    onPressed: () => windowManager.close(),
+                    icon: Icon(Icons.close, color: scheme.onPrimary),
+                  ),
+                ],
+                actionsPadding: const EdgeInsets.only(right: 8),
+              ),
+              body: Row(
+                children: [
+                  SizedBox(
+                    width: 256,
+                    child: Padding(
+                      padding: const EdgeInsets.all(8),
+                      child: Stack(
+                        children: [
+                          AnimatedPositioned(
+                            duration: const Duration(milliseconds: 550),
+                            curve: Curves.elasticOut,
+                            top: _selectedTop,
+                            left: 0,
+                            right: 0,
+                            height: _itemHeight,
+                            child: IgnorePointer(
+                              child: Ink(
+                                decoration: BoxDecoration(
+                                  borderRadius: const BorderRadius.all(
+                                    Radius.circular(128),
+                                  ),
+                                  color: scheme.primaryContainer,
+                                ),
                               ),
-                              color: scheme.primaryContainer,
                             ),
+                          ),
+
+                          Column(
+                            spacing: _itemSpacing,
+                            children: List.generate(_tabs.length, (index) {
+                              final tab = _tabs[index];
+                              final selected = _selectedIndex == index;
+                              return SizedBox(
+                                height: _itemHeight,
+                                child: ListTile(
+                                  onTap: () => _onItemTapped(index),
+                                  contentPadding: const EdgeInsets.only(
+                                    left: 16,
+                                    top: 2,
+                                  ),
+                                  leading: Icon(
+                                    tab.icon,
+                                    color: selected
+                                        ? scheme.onPrimaryContainer
+                                        : scheme.onSurface,
+                                  ),
+                                  title: Text(
+                                    tab.title,
+                                    style: TextStyle(
+                                      color: selected
+                                          ? scheme.onPrimaryContainer
+                                          : scheme.onSurface,
+                                    ),
+                                  ),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(128),
+                                  ),
+                                  tileColor: Colors.transparent,
+                                ),
+                              );
+                            }),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  Expanded(
+                    child: SlideTransition(
+                      position: slideAnimation,
+                      child: FadeTransition(
+                        opacity: _animationController!,
+                        child: Padding(
+                          padding: const EdgeInsets.only(left: 12, top: 8),
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(8),
+                            child: _tabs[_selectedIndex].page,
                           ),
                         ),
                       ),
-
-                      Column(
-                        spacing: _itemSpacing,
-                        children: List.generate(_tabs.length, (index) {
-                          final tab = _tabs[index];
-                          final selected = _selectedIndex == index;
-                          return SizedBox(
-                            height: _itemHeight,
-                            child: ListTile(
-                              onTap: () => _onItemTapped(index),
-                              contentPadding: const EdgeInsets.only(
-                                left: 16,
-                                top: 2,
-                              ),
-                              leading: Icon(
-                                tab.icon,
-                                color: selected
-                                    ? scheme.onPrimaryContainer
-                                    : scheme.onSurface,
-                              ),
-                              title: Text(
-                                tab.title,
-                                style: TextStyle(
-                                  color: selected
-                                      ? scheme.onPrimaryContainer
-                                      : scheme.onSurface,
-                                ),
-                              ),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(128),
-                              ),
-                              tileColor: Colors.transparent,
-                            ),
-                          );
-                        }),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              Expanded(
-                child: SlideTransition(
-                  position: slideAnimation,
-                  child: FadeTransition(
-                    opacity: _animationController!,
-                    child: Padding(
-                      padding: const EdgeInsets.only(left: 12, top: 8),
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(8),
-                        child: _tabs[_selectedIndex].page,
-                      ),
                     ),
                   ),
-                ),
+                ],
               ),
-            ],
+            ),
           ),
-        ),
+        ],
       ),
     );
   }
 }
-
 
 class SettingsPage extends StatefulWidget {
   const SettingsPage({super.key});
@@ -361,11 +388,32 @@ class _SettingsPageState extends State<SettingsPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor:
+          UserPreferences
+                  .instance
+                  .currentSettingsMap["scaffold_background_image_url"] ==
+              ""
+          ? Theme.of(context).colorScheme.surface
+          : Theme.of(context).colorScheme.surface.withAlpha(
+              UserPreferences.instance.currentSettingsMap["ui_alpha"],
+            ),
       body: CustomScrollView(
         slivers: [
           SliverAppBar(
-            surfaceTintColor: Theme.of(context).colorScheme.surface,
-            backgroundColor: Theme.of(context).colorScheme.surface,
+            surfaceTintColor:
+                UserPreferences
+                        .instance
+                        .currentSettingsMap["scaffold_background_image_url"] ==
+                    ""
+                ? Theme.of(context).colorScheme.surface
+                : Colors.transparent,
+            backgroundColor:
+                UserPreferences
+                        .instance
+                        .currentSettingsMap["scaffold_background_image_url"] ==
+                    ""
+                ? Theme.of(context).colorScheme.surface
+                : Colors.transparent,
 
             expandedHeight: 80.0,
             floating: true,
@@ -381,9 +429,7 @@ class _SettingsPageState extends State<SettingsPage> {
           const SliverToBoxAdapter(
             child: Column(
               mainAxisSize: MainAxisSize.min,
-              children: const [
-                Text("data"),
-              ],
+              children: const [Text("data")],
             ),
           ),
 

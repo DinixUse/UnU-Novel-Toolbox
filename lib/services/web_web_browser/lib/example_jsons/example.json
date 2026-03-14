@@ -1,0 +1,18 @@
+{
+  "novelAuthor": "作者A",
+  "novelTitle": "小说A",
+  "tasks": [
+    {
+      "url": "https://www.ciweimao.com/chapter/114549862",
+      "savepath": "E:/novels/chapter1.txt"
+    },
+    {
+      "url": "https://www.ciweimao.com/chapter/113688246",
+      "savepath": "E:/novels/chapter2.txt"
+    },
+    {
+      "url": "https://www.ciweimao.com/chapter/113671842",
+      "savepath": "E:/novels/chapter3.txt"
+    }
+  ]
+}

@@ -5,6 +5,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:html/parser.dart' show parse;
 import 'package:html/dom.dart' as dom;
+import 'package:unu_novel_toolbox/preferences.dart';
 import 'package:unu_novel_toolbox/widgets/widgets.dart';
 import 'package:webview_windows/webview_windows.dart';
 
@@ -458,7 +459,7 @@ class _cwm_NovelCatalogPageState extends State<cwm_NovelCatalogPage> {
         });
       } else {
         setState(() => _statusMessage = '解析章節數據...');
-        
+
         _novelAuthor = bookData["novelAuthor"];
         _novelCover = bookData["novelCover"];
         _novelTitle = bookData["novelTitle"];
@@ -493,397 +494,414 @@ class _cwm_NovelCatalogPageState extends State<cwm_NovelCatalogPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       //appBar: AppBar(title: const Text('刺蝟貓小説解析下載工具')),
+      backgroundColor:
+          UserPreferences
+                  .instance
+                  .currentSettingsMap["scaffold_background_image_url"] ==
+              ""
+          ? Theme.of(context).colorScheme.surface
+          : Theme.of(context).colorScheme.surface.withAlpha(
+              UserPreferences.instance.currentSettingsMap["ui_alpha"],
+            ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 1200),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Row(
-                children: [
-                  Expanded(
-                    child: TextField(
-                      controller: _urlController,
-                      decoration: InputDecoration(
-                        labelText: '請填入URL',
-                        hintText: 'https://www.ciweimao.com/book/数字',
-                        border: const OutlineInputBorder(
-                          borderRadius: BorderRadius.all(Radius.circular(128)),
-                        ),
-                        prefixIcon: const Icon(Icons.list),
-                        suffixIcon: IconButton(
-                          icon: const Icon(Icons.clear),
-                          onPressed: () => _urlController.clear(),
-                        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: _urlController,
+                    decoration: InputDecoration(
+                      labelText: '請填入URL',
+                      hintText: 'https://www.ciweimao.com/book/数字',
+                      border: const OutlineInputBorder(
+                        borderRadius: BorderRadius.all(Radius.circular(128)),
                       ),
-                      style: const TextStyle(fontSize: 16),
-                      maxLines: 1,
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-
-                  SizedBox(
-                    height: 50,
-                    width: 200,
-                    child: FilledButton(
-                      onPressed: (_isLoading || !_webViewInitialized)
-                          ? null
-                          : () {
-                              setState(() {
-                                _isTaskAdded = false;
-                              });
-                              _fetchAndParseCatalog();
-                            },
-                      style: FilledButton.styleFrom(
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(128),
-                        ),
+                      prefixIcon: const Icon(Icons.list),
+                      suffixIcon: IconButton(
+                        icon: const Icon(Icons.clear),
+                        onPressed: () => _urlController.clear(),
                       ),
-                      child: _isLoading
-                          ? Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                // CircularProgressIndicator(
-                                //   color: Colors.white,
-                                // ),
-                                ExpressiveLoadingIndicator(
-                                  color: Colors.white.withValues(alpha: 0.5),
-                                ),
-                              ],
-                            )
-                          : !_webViewInitialized
-                          ? const Text(
-                              '初始化WebView...',
-                              style: TextStyle(fontSize: 18),
-                            )
-                          : const Text('解析目錄', style: TextStyle(fontSize: 18)),
                     ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
-
-              if (_statusMessage.isNotEmpty)
-                Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 8),
-                  child: Text(
-                    _statusMessage,
-                    style: TextStyle(
-                      color: Theme.of(
-                        context,
-                      ).colorScheme.inverseSurface.withAlpha(128),
-                      fontSize: 14,
-                      fontWeight: FontWeight.w500,
-                    ),
+                    style: const TextStyle(fontSize: 16),
+                    maxLines: 1,
                   ),
                 ),
+                const SizedBox(width: 8),
 
-              Row(
-                mainAxisAlignment: MainAxisAlignment.start,
-                children: [
-                  _novelTitle.isNotEmpty
-                      ? Expanded(
-                          flex: 1,
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(vertical: 10),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                ClipRRect(
-                                  borderRadius: BorderRadius.circular(24),
-                                  child: Image.network(
-                                    _novelCover,
-                                    width: 200,
-                                    height: 290,
-                                    fit: BoxFit.cover,
-                                  ),
-                                ),
+                SizedBox(
+                  height: 50,
+                  width: 200,
+                  child: FilledButton(
+                    onPressed: (_isLoading || !_webViewInitialized)
+                        ? null
+                        : () {
+                            setState(() {
+                              _isTaskAdded = false;
+                            });
+                            _fetchAndParseCatalog();
+                          },
+                    style: FilledButton.styleFrom(
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(128),
+                      ),
+                    ),
+                    child: _isLoading
+                        ? Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              // CircularProgressIndicator(
+                              //   color: Colors.white,
+                              // ),
+                              ExpressiveLoadingIndicator(
+                                color: Colors.white.withValues(alpha: 0.5),
+                              ),
+                            ],
+                          )
+                        : !_webViewInitialized
+                        ? const Text(
+                            '初始化WebView...',
+                            style: TextStyle(fontSize: 18),
+                          )
+                        : const Text('解析目錄', style: TextStyle(fontSize: 18)),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
 
-                                const SizedBox(height: 8),
+            if (_statusMessage.isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 8),
+                child: Text(
+                  _statusMessage,
+                  style: TextStyle(
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.inverseSurface.withAlpha(128),
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ),
+
+            Row(
+              mainAxisAlignment: MainAxisAlignment.start,
+              children: [
+                _novelTitle.isNotEmpty
+                    ? Expanded(
+                        flex: 1,
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 10),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              ClipRRect(
+                                borderRadius: BorderRadius.circular(24),
+                                child: Image.network(
+                                  _novelCover,
+                                  width: 200,
+                                  height: 290,
+                                  fit: BoxFit.cover,
+                                ),
+                              ),
+
+                              const SizedBox(height: 8),
+                              Text(
+                                '小説信息',
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                  color: Theme.of(context).colorScheme.tertiary,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                '標題：$_novelTitle',
+                                style: const TextStyle(fontSize: 16),
+                              ),
+                              if (_novelAuthor.isNotEmpty)
                                 Text(
-                                  '小説信息',
-                                  style: TextStyle(
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.bold,
-                                    color: Theme.of(
-                                      context,
-                                    ).colorScheme.tertiary,
+                                  '作者：$_novelAuthor',
+                                  style: const TextStyle(
+                                    fontSize: 16,
+                                    color: Colors.grey,
                                   ),
                                 ),
-                                const SizedBox(height: 4),
+                              if (_bookId.isNotEmpty)
                                 Text(
-                                  '標題：$_novelTitle',
-                                  style: const TextStyle(fontSize: 16),
+                                  'ID：$_bookId',
+                                  style: const TextStyle(
+                                    fontSize: 16,
+                                    color: Colors.grey,
+                                  ),
                                 ),
-                                if (_novelAuthor.isNotEmpty)
-                                  Text(
-                                    '作者：$_novelAuthor',
-                                    style: const TextStyle(
-                                      fontSize: 16,
-                                      color: Colors.grey,
-                                    ),
-                                  ),
-                                if (_bookId.isNotEmpty)
-                                  Text(
-                                    'ID：$_bookId',
-                                    style: const TextStyle(
-                                      fontSize: 16,
-                                      color: Colors.grey,
-                                    ),
-                                  ),
-                              ],
-                            ),
+                            ],
                           ),
-                        )
-                      : const SizedBox(),
-                  Expanded(
-                    flex: 1,
-                    child: Material(
-                      borderRadius: BorderRadius.circular(24),
-                      clipBehavior: Clip.hardEdge,
-                      color: Theme.of(
-                        context,
-                      ).colorScheme.surfaceContainerLowest,
-                      child: SizedBox(
-                        height: 400,
-                        child: _catalogData.isEmpty
-                            ? const Center(
-                                child: Column(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Text(
-                                      '等待開始...',
-                                      style: TextStyle(
-                                        color: Colors.grey,
-                                        fontSize: 16,
-                                      ),
+                        ),
+                      )
+                    : const SizedBox(),
+                Expanded(
+                  flex: 1,
+                  child: Material(
+                    borderRadius: BorderRadius.circular(24),
+                    clipBehavior: Clip.hardEdge,
+                    color:
+                        UserPreferences
+                                .instance
+                                .currentSettingsMap["scaffold_background_image_url"] ==
+                            ""
+                        ? Theme.of(context).colorScheme.surfaceContainerLowest
+                        : Theme.of(
+                            context,
+                          ).colorScheme.surfaceContainerLowest.withAlpha(
+                            UserPreferences
+                                .instance
+                                .currentSettingsMap["ui_alpha"],
+                          ),
+                    child: SizedBox(
+                      height: 400,
+                      child: _catalogData.isEmpty
+                          ? const Center(
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Text(
+                                    '等待開始...',
+                                    style: TextStyle(
+                                      color: Colors.grey,
+                                      fontSize: 16,
                                     ),
-                                  ],
-                                ),
-                              )
-                            : Scaffold(
-                                backgroundColor: Colors.transparent,
-                                body: SingleChildScrollView(
-                                  padding: const EdgeInsets.all(20),
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: _catalogData.map((vol) {
-                                      return Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        children: [
-                                          Ink(
-                                            decoration: BoxDecoration(
-                                              color: Theme.of(
-                                                context,
-                                              ).colorScheme.tertiaryContainer,
-                                              borderRadius:
-                                                  BorderRadius.circular(128),
+                                  ),
+                                ],
+                              ),
+                            )
+                          : Scaffold(
+                              backgroundColor: Colors.transparent,
+                              body: SingleChildScrollView(
+                                padding: const EdgeInsets.all(20),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: _catalogData.map((vol) {
+                                    return Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Ink(
+                                          decoration: BoxDecoration(
+                                            color: Theme.of(
+                                              context,
+                                            ).colorScheme.tertiaryContainer,
+                                            borderRadius: BorderRadius.circular(
+                                              128,
                                             ),
-                                            child: Container(
-                                              width: double.infinity,
-                                              padding:
-                                                  const EdgeInsets.symmetric(
-                                                    vertical: 8,
-                                                    horizontal: 24,
-                                                  ),
-                                              margin:
-                                                  const EdgeInsets.symmetric(
-                                                    vertical: 8,
-                                                  ),
-                                              child: Text(
-                                                '${vol.volumeName}（共${vol.chapters.length}章）',
-                                                style: TextStyle(
-                                                  fontSize: 17,
-                                                  fontWeight: FontWeight.bold,
-                                                  color: Theme.of(context)
-                                                      .colorScheme
-                                                      .onTertiaryContainer,
-                                                ),
+                                          ),
+                                          child: Container(
+                                            width: double.infinity,
+                                            padding: const EdgeInsets.symmetric(
+                                              vertical: 8,
+                                              horizontal: 24,
+                                            ),
+                                            margin: const EdgeInsets.symmetric(
+                                              vertical: 8,
+                                            ),
+                                            child: Text(
+                                              '${vol.volumeName}（共${vol.chapters.length}章）',
+                                              style: TextStyle(
+                                                fontSize: 17,
+                                                fontWeight: FontWeight.bold,
+                                                color: Theme.of(context)
+                                                    .colorScheme
+                                                    .onTertiaryContainer,
                                               ),
                                             ),
                                           ),
-                                          Padding(
-                                            padding: const EdgeInsets.symmetric(
-                                              vertical: 5,
-                                            ),
-                                            child: Column(
-                                              children: vol.chapters.asMap().entries.map((
-                                                entry,
-                                              ) {
-                                                final idx = entry.key + 1;
-                                                final ch = entry.value;
-                                                return ListTile(
-                                                  shape:
-                                                      const RoundedRectangleBorder(
-                                                        borderRadius:
-                                                            BorderRadius.all(
-                                                              Radius.circular(
-                                                                4,
+                                        ),
+                                        Padding(
+                                          padding: const EdgeInsets.symmetric(
+                                            vertical: 5,
+                                          ),
+                                          child: Column(
+                                            children: vol.chapters.asMap().entries.map((
+                                              entry,
+                                            ) {
+                                              final idx = entry.key + 1;
+                                              final ch = entry.value;
+                                              return ListTile(
+                                                shape:
+                                                    const RoundedRectangleBorder(
+                                                      borderRadius:
+                                                          BorderRadius.all(
+                                                            Radius.circular(4),
+                                                          ),
+                                                    ),
+                                                leading: CircleAvatar(
+                                                  radius: 12,
+                                                  backgroundColor:
+                                                      Theme.of(context)
+                                                          .colorScheme
+                                                          .surfaceContainerLow,
+                                                  child: Text(
+                                                    '$idx',
+                                                    style: const TextStyle(
+                                                      fontSize: 12,
+                                                    ),
+                                                  ),
+                                                ),
+                                                title: Text(
+                                                  ch.title,
+                                                  style: const TextStyle(
+                                                    fontSize: 15,
+                                                  ),
+                                                  overflow:
+                                                      TextOverflow.ellipsis,
+                                                ),
+                                                subtitle: Text(
+                                                  ch.url,
+                                                  style: TextStyle(
+                                                    fontSize: 12,
+                                                    color: Colors.grey.shade600,
+                                                  ),
+                                                  overflow:
+                                                      TextOverflow.ellipsis,
+                                                ),
+
+                                                onTap: () async {
+                                                  void Function()?
+                                                  closeLoadingDialog;
+                                                  showDialog(
+                                                    barrierDismissible: false,
+                                                    context: context,
+                                                    builder: (context) {
+                                                      closeLoadingDialog = () =>
+                                                          Navigator.pop(
+                                                            context,
+                                                          );
+                                                      return Container(
+                                                        alignment:
+                                                            Alignment.center,
+                                                        child:
+                                                            const ExpressiveLoadingIndicator(
+                                                              contained: true,
+                                                            ),
+                                                      );
+                                                    },
+                                                  );
+
+                                                  String content = "";
+                                                  final cwm_NovelExtractor
+                                                  extractor =
+                                                      cwm_NovelExtractor();
+                                                  bool isInitSuccess =
+                                                      await extractor
+                                                          .initialize();
+
+                                                  if (isInitSuccess) {
+                                                    content = await extractor
+                                                        .getNovelContent(
+                                                          ch.url,
+                                                        );
+
+                                                    if (content.contains(
+                                                          '失败',
+                                                        ) ||
+                                                        content.contains(
+                                                          '未找到',
+                                                        ) ||
+                                                        content.contains(
+                                                          'URL格式错误',
+                                                        )) {
+                                                      print('提取失败：$content');
+                                                    } else {
+                                                      print(
+                                                        '提取成功，内容长度：${content.length} 字符',
+                                                      );
+                                                    }
+
+                                                    extractor.dispose();
+                                                  } else {
+                                                    print('工具类初始化失败，无法提取内容');
+                                                  }
+                                                  closeLoadingDialog!();
+
+                                                  // 測試用 開始
+                                                  // File txtFile = File(
+                                                  //   "C:/Users/Dinix/Desktop/example.txt",
+                                                  // );
+
+                                                  // await txtFile.writeAsString(
+                                                  //   content,
+                                                  //   encoding:
+                                                  //       Encoding.getByName(
+                                                  //         'utf-8',
+                                                  //       )!,
+                                                  // );
+                                                  // 測試用 結束
+
+                                                  showDialog(
+                                                    context: context,
+                                                    builder: (context) {
+                                                      return AlertDialog(
+                                                        title: Row(
+                                                          mainAxisAlignment:
+                                                              MainAxisAlignment
+                                                                  .spaceBetween,
+                                                          children: [
+                                                            Text(ch.title),
+                                                            IconButton(
+                                                              onPressed: () =>
+                                                                  Navigator.of(
+                                                                    context,
+                                                                  ).pop(),
+                                                              icon: const Icon(
+                                                                Icons.close,
                                                               ),
                                                             ),
-                                                      ),
-                                                  leading: CircleAvatar(
-                                                    radius: 12,
-                                                    backgroundColor:
-                                                        Theme.of(context)
-                                                            .colorScheme
-                                                            .surfaceContainerLow,
-                                                    child: Text(
-                                                      '$idx',
-                                                      style: const TextStyle(
-                                                        fontSize: 12,
-                                                      ),
-                                                    ),
-                                                  ),
-                                                  title: Text(
-                                                    ch.title,
-                                                    style: const TextStyle(
-                                                      fontSize: 15,
-                                                    ),
-                                                    overflow:
-                                                        TextOverflow.ellipsis,
-                                                  ),
-                                                  subtitle: Text(
-                                                    ch.url,
-                                                    style: TextStyle(
-                                                      fontSize: 12,
-                                                      color:
-                                                          Colors.grey.shade600,
-                                                    ),
-                                                    overflow:
-                                                        TextOverflow.ellipsis,
-                                                  ),
-
-                                                  onTap: () async {
-                                                    void Function()?
-                                                    closeLoadingDialog;
-                                                    showDialog(
-                                                      barrierDismissible: false,
-                                                      context: context,
-                                                      builder: (context) {
-                                                        closeLoadingDialog =
-                                                            () => Navigator.pop(
-                                                              context,
-                                                            );
-                                                        return Container(
-                                                          alignment:
-                                                              Alignment.center,
-                                                          child:
-                                                              const ExpressiveLoadingIndicator(
-                                                                contained: true,
-                                                              ),
-                                                        );
-                                                      },
-                                                    );
-
-                                                    String content = "";
-                                                    final cwm_NovelExtractor
-                                                    extractor =
-                                                        cwm_NovelExtractor();
-                                                    bool isInitSuccess =
-                                                        await extractor
-                                                            .initialize();
-
-                                                    if (isInitSuccess) {
-                                                      content = await extractor
-                                                          .getNovelContent(
-                                                            ch.url,
-                                                          );
-
-                                                      if (content.contains(
-                                                            '失败',
-                                                          ) ||
-                                                          content.contains(
-                                                            '未找到',
-                                                          ) ||
-                                                          content.contains(
-                                                            'URL格式错误',
-                                                          )) {
-                                                        print('提取失败：$content');
-                                                      } else {
-                                                        print(
-                                                          '提取成功，内容长度：${content.length} 字符',
-                                                        );
-                                                      }
-
-                                                      extractor.dispose();
-                                                    } else {
-                                                      print('工具类初始化失败，无法提取内容');
-                                                    }
-                                                    closeLoadingDialog!();
-
-                                                    // 測試用 開始
-                                                    // File txtFile = File(
-                                                    //   "C:/Users/Dinix/Desktop/example.txt",
-                                                    // );
-
-                                                    // await txtFile.writeAsString(
-                                                    //   content,
-                                                    //   encoding:
-                                                    //       Encoding.getByName(
-                                                    //         'utf-8',
-                                                    //       )!,
-                                                    // );
-                                                    // 測試用 結束
-
-                                                    showDialog(
-                                                      context: context,
-                                                      builder: (context) {
-                                                        return AlertDialog(
-                                                          title: Row(
-                                                            mainAxisAlignment:
-                                                                MainAxisAlignment
-                                                                    .spaceBetween,
-                                                            children: [
-                                                              Text(ch.title),
-                                                              IconButton(
-                                                                onPressed: () =>
-                                                                    Navigator.of(
-                                                                      context,
-                                                                    ).pop(),
-                                                                icon: const Icon(
-                                                                  Icons.close,
-                                                                ),
-                                                              ),
-                                                            ],
-                                                          ),
-                                                          content:
-                                                              SingleChildScrollView(
-                                                                child:
-                                                                    SelectableText(
-                                                                      content,
-                                                                    ),
-                                                              ),
-                                                        );
-                                                      },
-                                                    );
-                                                  },
-                                                  //trailing: ExpressiveLoadingIndicator(),
-                                                );
-                                              }).toList(),
-                                            ),
+                                                          ],
+                                                        ),
+                                                        content:
+                                                            SingleChildScrollView(
+                                                              child:
+                                                                  SelectableText(
+                                                                    content,
+                                                                  ),
+                                                            ),
+                                                      );
+                                                    },
+                                                  );
+                                                },
+                                                //trailing: ExpressiveLoadingIndicator(),
+                                              );
+                                            }).toList(),
                                           ),
-                                        ],
-                                      );
-                                    }).toList(),
-                                  ),
+                                        ),
+                                      ],
+                                    );
+                                  }).toList(),
                                 ),
                               ),
-                      ),
+                            ),
                     ),
                   ),
-                ],
-              ),
-            ],
-          ),
+                ),
+              ],
+            ),
+          ],
         ),
       ),
 
       bottomNavigationBar: BottomAppBar(
-        color: Theme.of(context).colorScheme.surfaceContainerHighest,
+        color:
+            UserPreferences
+                    .instance
+                    .currentSettingsMap["scaffold_background_image_url"] ==
+                ""
+            ? Theme.of(context).colorScheme.surfaceContainerHighest
+            : Theme.of(context).colorScheme.surfaceContainerHighest.withAlpha(
+                UserPreferences.instance.currentSettingsMap["ui_alpha"],
+              ),
         elevation: 0.0,
         child: Row(
           children: <Widget>[

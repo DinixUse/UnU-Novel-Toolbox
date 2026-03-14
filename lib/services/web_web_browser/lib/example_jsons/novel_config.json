@@ -1,0 +1,61 @@
+{
+  "coverUrl": "C:/Users/sbqmy/CLionProjects/txt_to_epub_maker/data/TheRisingDawn/Covers/the_rising_dawn.jpg",
+  "isEpub": false,
+  "volumes": [
+    {
+      "volumeName": "Volume 1: The Beginning",
+      "chapters": [
+        {
+          "url": "C:/Users/sbqmy/CLionProjects/txt_to_epub_maker/data/TheRisingDawn/Volume_1_The_Beginning/Chapter_1_A_New_Journey.txt",
+          "title": "Chapter 1: A New Journey"
+        },
+        {
+          "url": "C:/Users/sbqmy/CLionProjects/txt_to_epub_maker/data/TheRisingDawn/Volume_1_The_Beginning/Chapter_2_Unexpected_Encounters.txt",
+          "title": "Chapter 2: Unexpected Encounters"
+        },
+        {
+          "url": "C:/Users/sbqmy/CLionProjects/txt_to_epub_maker/data/TheRisingDawn/Volume_1_The_Beginning/Chapter_3_Secrets_Unveiled.txt",
+          "title": "Chapter 3: Secrets Unveiled"
+        }
+      ]
+    },
+    {
+      "volumeName": "Volume 2: Dark Times",
+      "chapters": [
+        {
+          "url": "C:/Users/sbqmy/CLionProjects/txt_to_epub_maker/data/TheRisingDawn/Volume_2_Dark_Times/Chapter_4_The_Shadow_Falls.txt",
+          "title": "Chapter 4: The Shadow Falls"
+        },
+        {
+          "url": "C:/Users/sbqmy/CLionProjects/txt_to_epub_maker/data/TheRisingDawn/Volume_2_Dark_Times/Chapter_5_Allies_and_Enemies.txt",
+          "title": "Chapter 5: Allies and Enemies"
+        },
+        {
+          "url": "C:/Users/sbqmy/CLionProjects/txt_to_epub_maker/data/TheRisingDawn/Volume_2_Dark_Times/Chapter_6_The_Turning_Point.txt",
+          "title": "Chapter 6: The Turning Point"
+        }
+      ]
+    },
+    {
+      "volumeName": "Volume 3: Dawn Rises",
+      "chapters": [
+        {
+          "url": "C:/Users/sbqmy/CLionProjects/txt_to_epub_maker/data/TheRisingDawn/Volume_3_Dawn_Rises/Chapter_7_Preparation_for_Battle.txt",
+          "title": "Chapter 7: Preparation for Battle"
+        },
+        {
+          "url": "C:/Users/sbqmy/CLionProjects/txt_to_epub_maker/data/TheRisingDawn/Volume_3_Dawn_Rises/Chapter_8_The_Final_Confrontation.txt",
+          "title": "Chapter 8: The Final Confrontation"
+        },
+        {
+          "url": "C:/Users/sbqmy/CLionProjects/txt_to_epub_maker/data/TheRisingDawn/Volume_3_Dawn_Rises/Chapter_9_A_New_Beginning.txt",
+          "title": "Chapter 9: A New Beginning"
+        }
+      ]
+    }
+  ],
+  "novelAuthor": "John Smith",
+  "bookId": "urn:uuid:123e4567-e89b-12d3-a456-426614174000",
+  "tempPath": "./data/temp",
+  "novelTitle": "The Rising Dawn"
+}

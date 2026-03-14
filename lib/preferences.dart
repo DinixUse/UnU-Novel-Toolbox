@@ -11,9 +11,12 @@ class UserPreferences {
   static UserPreferences get instance => _instance;
 
   final applicationPath = Directory.current.path;
+  final webWebBrowserPath = path.join(Directory.current.path, "modules", "web_web_browser");
 
   final Map<String, dynamic> defaultSettingsMap = {
     "scaffold_background_image_url": "",
+    "ui_alpha": 128,
+    "image_opacity": 0.5,
     "download_root_path": "C:\\UnUDownloads",
     "app_color": 4280391411,
     "dynamic_app_color": false
