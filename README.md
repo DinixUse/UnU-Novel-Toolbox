@@ -40,7 +40,7 @@ UnU Novel Toolbox 是一個 Flutter Windows 桌面應用，針對小說下載與
 ## ⚙️ 本地運行
 
 ```bash
-git clone <repo>
+git clone https://github.com/DinixUse/UnU-Novel-Toolbox.git
 cd UnU-Novel-Toolbox
 flutter pub get
 flutter run -d windows
