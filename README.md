@@ -5,13 +5,9 @@
 </div>
 
 <div align="center">
-
   [![Language](https://img.shields.io/github/languages/top/DinixUse/UnU-Novel-Toolbox?color=informational)](https://github.com/DinixUse/UnU-Novel-Toolbox)
-
   [![Built with Flutter](https://img.shields.io/badge/Engine-Flutter-blue)](https://flutter.dev)
-
   [![Stars](https://img.shields.io/github/stars/DinixUse/UnU-Novel-Toolbox?color=yellow)](https://github.com/DinixUse/UnU-Novel-Toolbox/stargazers)
-  
 </div>
 
 UnU Novel Toolbox 是一個 Flutter Windows 桌面應用，針對小說下載與解析做優化。主要功能如下：
