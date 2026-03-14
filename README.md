@@ -6,7 +6,6 @@
 
 <p align="center">
   <a href="https://github.com/DinixUse/UnU-Novel-Toolbox"><img src="https://img.shields.io/github/languages/top/DinixUse/UnU-Novel-Toolbox?color=informational&style=for-the-badge" alt="Language"></a>
-  <a href="https://github.com/DinixUse/UnU-Novel-Toolbox"><img src="https://img.shields.io/github/languages/top/DinixUse/UnU-Novel-Toolbox/c++?color=orange&style=for-the-badge" alt="C++ Percentage"></a>
   <a href="https://flutter.dev"><img src="https://img.shields.io/badge/Engine-Flutter-blue?style=for-the-badge" alt="Built with Flutter"></a>
   <a href="https://github.com/DinixUse/UnU-Novel-Toolbox/stargazers"><img src="https://img.shields.io/github/stars/DinixUse/UnU-Novel-Toolbox?color=yellow&style=for-the-badge" alt="Stars"></a>
 </p>
