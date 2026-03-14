@@ -4,12 +4,17 @@
   <p>小説解析・ダウンロードツール（Flutter Windowsデスクトップアプリ）</p>
 </div>
 
-UnU Novel Toolbox 是一個 Flutter Windows 桌面應用，針對小說下載與解析做優化。主要功能如下：
+<div align="center">
 
-[![Language](https://img.shields.io/github/languages/top/DinixUse/UnU-Novel-Toolbox?color=informational)](https://github.com/DinixUse/UnU-Novel-Toolbox)
-[![Stars](https://img.shields.io/github/stars/DinixUse/UnU-Novel-Toolbox?color=yellow)](https://github.com/DinixUse/UnU-Novel-Toolbox/stargazers)
-[![Built with Flutter](https://img.shields.io/badge/Engine-Flutter-blue)](https://flutter.dev)
-[![Collaborators](https://img.shields.io/github/collaborators/DinixUse/UnU-Novel-Toolbox?color=2b9348)](https://github.com/DinixUse/UnU-Novel-Toolbox/graphs/contributors)
+  [![Language](https://img.shields.io/github/languages/top/DinixUse/UnU-Novel-Toolbox?color=informational)](https://github.com/DinixUse/UnU-Novel-Toolbox)
+
+  [![Built with Flutter](https://img.shields.io/badge/Engine-Flutter-blue)](https://flutter.dev)
+
+  [![Stars](https://img.shields.io/github/stars/DinixUse/UnU-Novel-Toolbox?color=yellow)](https://github.com/DinixUse/UnU-Novel-Toolbox/stargazers)
+  
+</div>
+
+UnU Novel Toolbox 是一個 Flutter Windows 桌面應用，針對小說下載與解析做優化。主要功能如下：
 
 1) 從刺猬貓（ciweimao）解析書籍目錄與章節列表。
 2) 用內建 WebView 模擬使用者操作（頁面加載、點擊展開）取得章節 HTML。
