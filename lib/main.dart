@@ -1,20 +1,16 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
-//import 'package:liquid_glass_widgets/liquid_glass_widgets.dart';
 import 'package:window_manager/window_manager.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'services/download_manager.dart';
-
 import 'testing.dart';
 import 'testing_2.dart';
 import 'downloader_page.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-
-  //await LiquidGlassWidgets.initialize();
   await windowManager.ensureInitialized();
 
   WindowOptions windowOptions = const WindowOptions(
@@ -28,27 +24,20 @@ void main() async {
 
   windowManager.waitUntilReadyToShow(windowOptions, () async {
     await _restoreWindowPosition();
-
     await windowManager.show();
     await windowManager.focus();
   });
 
   windowManager.addListener(MyWindowListener());
-
   DownloadManager.instance.startDaemon();
-
   runApp(const MyApp());
 }
 
-// 保存窗口位置和尺寸到本地
 Future<void> _saveWindowPosition() async {
   try {
     final prefs = await SharedPreferences.getInstance();
-    // 获取当前窗口的位置（x, y）和尺寸（width, height）
     final position = await windowManager.getPosition();
     final size = await windowManager.getSize();
-
-    // 保存到本地
     await prefs.setDouble('window_x', position.dx);
     await prefs.setDouble('window_y', position.dy);
     await prefs.setDouble('window_width', size.width);
@@ -58,19 +47,15 @@ Future<void> _saveWindowPosition() async {
   }
 }
 
-// 从本地恢复窗口位置和尺寸
 Future<void> _restoreWindowPosition() async {
   try {
     final prefs = await SharedPreferences.getInstance();
-    // 读取本地保存的值（带默认值，首次启动用默认值）
     final x = prefs.getDouble('window_x');
     final y = prefs.getDouble('window_y');
     final width = prefs.getDouble('window_width') ?? 1208;
     final height = prefs.getDouble('window_height') ?? 789;
 
-    // 如果有保存的位置，恢复位置；否则保持居中
     if (x != null && y != null) {
-      // 先设置尺寸，再设置位置（避免尺寸异常导致位置偏移）
       await windowManager.setSize(Size(width, height));
       await windowManager.setPosition(Offset(x, y));
     }
@@ -82,7 +67,6 @@ Future<void> _restoreWindowPosition() async {
 class MyWindowListener extends WindowListener {
   @override
   void onWindowClose() {
-    // 保存位置完成后再销毁窗口
     _saveWindowPosition().then((_) => windowManager.destroy());
   }
 }
@@ -96,10 +80,26 @@ class MyApp extends StatelessWidget {
       title: 'UnU Novel Toolbox',
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
+        // 优化涟漪效果的颜色
+        splashFactory: InkRipple.splashFactory,
+        splashColor: Colors.white12,
       ),
       home: HomePage(),
     );
   }
+}
+
+// Tab 模型类
+class AppTab {
+  final String title;
+  final IconData icon;
+  final Widget page;
+
+  const AppTab({
+    required this.title,
+    required this.icon,
+    required this.page,
+  });
 }
 
 class HomePage extends StatefulWidget {
@@ -111,26 +111,41 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage>
     with SingleTickerProviderStateMixin {
-  // 定义页面列表
-  final List<Widget> _pages = [
-    const Center(child: Text("起始頁内容", style: TextStyle(fontSize: 24))),
-    const DownloaderPage(),
-    const Center(child: Text("設定页面内容", style: TextStyle(fontSize: 24))),
-
-    const NovelExtractorPage(),
+  // Tab 配置列表
+  final List<AppTab> _tabs = [
+    const AppTab(
+      title: "起始頁",
+      icon: Icons.home,
+      page: Center(child: Text("起始頁内容", style: TextStyle(fontSize: 24))),
+    ),
+    const AppTab(
+      title: "下載器",
+      icon: Icons.download,
+      page: DownloaderPage(),
+    ),
+    const AppTab(
+      title: "設定",
+      icon: Icons.settings,
+      page: Center(child: Text("設定页面内容", style: TextStyle(fontSize: 24))),
+    ),
+    const AppTab(
+      title: "測試頁面",
+      icon: Icons.toc_outlined,
+      page: NovelExtractorPage(),
+    ),
   ];
 
   int _selectedIndex = 0;
-  // 可空动画控制器
   AnimationController? _animationController;
   Animation<Offset>? _slideAnimation;
+
+  final double _itemHeight = 52;
+  final double _itemSpacing = 4;
 
   @override
   void initState() {
     super.initState();
-    // 初始化动画
     _initAnimation();
-    // 首次进入播放一次动画
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _animationController?.forward();
     });
@@ -142,26 +157,17 @@ class _HomePageState extends State<HomePage>
         vsync: this,
         duration: const Duration(milliseconds: 300),
       );
-
-      _slideAnimation =
-          Tween<Offset>(begin: const Offset(0, 0.3), end: Offset.zero).animate(
-            CurvedAnimation(
-              parent: _animationController!,
-              curve: Curves.easeOutCubic,
-            ),
-          );
-    } catch (e) {
-      final fallbackController = AnimationController(
-        vsync: this,
-        duration: Duration.zero,
-      );
-      fallbackController.forward();
-
-      _slideAnimation = Tween<Offset>(begin: Offset.zero, end: Offset.zero)
+      _slideAnimation = Tween<Offset>(begin: const Offset(0, 0.3), end: Offset.zero)
           .animate(
-            CurvedAnimation(parent: fallbackController, curve: Curves.linear),
-          );
-      _animationController = fallbackController;
+        CurvedAnimation(
+          parent: _animationController!,
+          curve: Curves.easeOutCubic,
+        ),
+      );
+    } catch (e) {
+      final ctrl = AnimationController(vsync: this, duration: Duration.zero)..forward();
+      _slideAnimation = Tween<Offset>(begin: Offset.zero, end: Offset.zero).animate(ctrl);
+      _animationController = ctrl;
     }
   }
 
@@ -172,40 +178,28 @@ class _HomePageState extends State<HomePage>
   }
 
   void _onItemTapped(int index) {
-    setState(() {
-      _selectedIndex = index;
-    });
+    if (_selectedIndex == index) return;
+    setState(() => _selectedIndex = index);
+    _animationController?.reset();
+    _animationController?.forward();
+  }
 
-    if (_animationController != null) {
-      _animationController!.reset();
-      _animationController!.forward();
-    }
+  double get _selectedTop {
+    return _selectedIndex * (_itemHeight + _itemSpacing);
   }
 
   @override
   Widget build(BuildContext context) {
-    final slideAnimation =
-        _slideAnimation ??
+    final scheme = Theme.of(context).colorScheme;
+    final slideAnimation = _slideAnimation ??
         Tween<Offset>(begin: Offset.zero, end: Offset.zero).animate(
-          CurvedAnimation(
-            parent: AnimationController(vsync: this, duration: Duration.zero)
-              ..forward(),
-            curve: Curves.linear,
-          ),
+          AnimationController(vsync: this, duration: Duration.zero)..forward(),
         );
-
-    final animationController =
-        _animationController ??
-              AnimationController(
-                vsync: this,
-                duration: const Duration(milliseconds: 300),
-              )
-          ..forward();
 
     return Scaffold(
       backgroundColor: Color.alphaBlend(
-        Theme.of(context).colorScheme.primaryContainer.withOpacity(0.3),
-        Theme.of(context).colorScheme.surfaceContainerLow,
+        scheme.primaryContainer.withOpacity(0.3),
+        scheme.surfaceContainerLow,
       ),
       body: Padding(
         padding: const EdgeInsets.all(8),
@@ -221,63 +215,39 @@ class _HomePageState extends State<HomePage>
             backgroundColor: Colors.transparent,
             title: const Text("UnU Novel Toolbox"),
             flexibleSpace: GestureDetector(
-              onPanStart: (_) async => await windowManager.startDragging(),
-              child: Container(color: Colors.transparent),
+              onPanStart: (_) => windowManager.startDragging(),
             ),
             actions: [
-              Stack(
-                children: [
-                  IconButton.filledTonal(
-                    onPressed: () {
-                      // Navigator.push(
-                      //   context,
-                      //   MaterialPageRoute(
-                      //     builder: (context) => const AllDownloadTasksPage(),
-                      //   ),
-                      // );
-                    },
-                    icon: const Icon(Icons.download_outlined),
-                    style: IconButton.styleFrom(
-                      backgroundColor: Theme.of(
-                        context,
-                      ).colorScheme.tertiaryContainer,
-                      foregroundColor: Theme.of(
-                        context,
-                      ).colorScheme.onTertiaryContainer,
-                    ),
-                  ),
-                ],
+              IconButton.filledTonal(
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const MainDownloadScreen()),
+                  );
+                },
+                icon: const Icon(Icons.download_outlined),
+                style: IconButton.styleFrom(
+                  backgroundColor: scheme.tertiaryContainer,
+                  foregroundColor: scheme.onTertiaryContainer,
+                ),
               ),
               const SizedBox(width: 4),
               IconButton.filledTonal(
-                // style: IconButton.styleFrom(
-                //   backgroundColor: Theme.of(
-                //     context,
-                //   ).colorScheme.tertiaryContainer,
-                //   foregroundColor: Theme.of(
-                //     context,
-                //   ).colorScheme.onTertiaryContainer,
-                // ),
                 onPressed: () => windowManager.minimize(),
                 icon: const Icon(Icons.minimize),
               ),
               const SizedBox(width: 4),
               IconButton.filledTonal(
-                onPressed: () async => await windowManager.isMaximized()
+                onPressed: () async =>
+                await windowManager.isMaximized()
                     ? windowManager.unmaximize()
                     : windowManager.maximize(),
                 icon: const Icon(Icons.crop_square_outlined),
               ),
               const SizedBox(width: 4),
               IconButton.filled(
-                onPressed: () async {
-                  //await _saveWindowPosition();
-                  windowManager.close();
-                },
-                icon: Icon(
-                  Icons.close,
-                  color: Theme.of(context).colorScheme.onPrimary,
-                ),
+                onPressed: () => windowManager.close(),
+                icon: Icon(Icons.close, color: scheme.onPrimary),
               ),
             ],
             actionsPadding: const EdgeInsets.only(right: 8),
@@ -288,107 +258,72 @@ class _HomePageState extends State<HomePage>
                 width: 256,
                 child: Padding(
                   padding: const EdgeInsets.all(8),
-                  child: Column(
-                    spacing: 4,
+                  child: Stack(
                     children: [
-                      ListTile(
-                        onTap: () =>
-                            _selectedIndex == 0 ? null : _onItemTapped(0),
-                        contentPadding: const EdgeInsets.only(
-                          top: 4,
-                          bottom: 4,
-                          left: 16,
+                      AnimatedPositioned(
+                        duration: const Duration(milliseconds: 550),
+                        curve: Curves.elasticOut,
+                        top: _selectedTop,
+                        left: 0,
+                        right: 0,
+                        height: _itemHeight,
+                        child: IgnorePointer(
+                          child: Ink(
+                            
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.all(Radius.circular(128)),
+                              color: scheme.primaryContainer,
+                            ),
+                          )
+                          ),
                         ),
-                        leading: const Icon(Icons.home),
-                        title: const Text("起始頁"),
-                        shape: const RoundedRectangleBorder(
-                          borderRadius: BorderRadius.all(Radius.circular(128)),
-                        ),
-                        tileColor: _selectedIndex == 0
-                            ? Theme.of(context).colorScheme.primaryContainer
-                            : null,
-                        textColor: _selectedIndex == 0
-                            ? Theme.of(context).colorScheme.onPrimaryContainer
-                            : Theme.of(context).colorScheme.onSurface,
-                      ),
-                      ListTile(
-                        onTap: () =>
-                            _selectedIndex == 1 ? null : _onItemTapped(1),
-                        contentPadding: const EdgeInsets.only(
-                          top: 4,
-                          bottom: 4,
-                          left: 16,
-                        ),
-                        leading: const Icon(Icons.download),
-                        title: const Text("下載器"),
-                        shape: const RoundedRectangleBorder(
-                          borderRadius: BorderRadius.all(Radius.circular(128)),
-                        ),
-                        tileColor: _selectedIndex == 1
-                            ? Theme.of(context).colorScheme.primaryContainer
-                            : null,
-                        textColor: _selectedIndex == 1
-                            ? Theme.of(context).colorScheme.onPrimaryContainer
-                            : Theme.of(context).colorScheme.onSurface,
-                      ),
-                      ListTile(
-                        onTap: () =>
-                            _selectedIndex == 2 ? null : _onItemTapped(2),
-                        contentPadding: const EdgeInsets.only(
-                          top: 4,
-                          bottom: 4,
-                          left: 16,
-                        ),
-                        leading: const Icon(Icons.settings),
-                        title: const Text("設定"),
-                        shape: const RoundedRectangleBorder(
-                          borderRadius: BorderRadius.all(Radius.circular(128)),
-                        ),
-                        tileColor: _selectedIndex == 2
-                            ? Theme.of(context).colorScheme.primaryContainer
-                            : null,
-                        textColor: _selectedIndex == 2
-                            ? Theme.of(context).colorScheme.onPrimaryContainer
-                            : Theme.of(context).colorScheme.onSurface,
-                      ),
 
-                      ListTile(
-                        onTap: () =>
-                            _selectedIndex == 3 ? null : _onItemTapped(3),
-                        contentPadding: const EdgeInsets.only(
-                          top: 4,
-                          bottom: 4,
-                          left: 16,
-                        ),
-                        leading: const Icon(Icons.toc_outlined),
-                        title: const Text("測試頁面"),
-                        shape: const RoundedRectangleBorder(
-                          borderRadius: BorderRadius.all(Radius.circular(128)),
-                        ),
-                        tileColor: _selectedIndex == 3
-                            ? Theme.of(context).colorScheme.primaryContainer
-                            : null,
-                        textColor: _selectedIndex == 3
-                            ? Theme.of(context).colorScheme.onPrimaryContainer
-                            : Theme.of(context).colorScheme.onSurface,
+                      Column(
+                        spacing: _itemSpacing,
+                        children: List.generate(_tabs.length, (index) {
+                          final tab = _tabs[index];
+                          final selected = _selectedIndex == index;
+                          return SizedBox(
+                            height: _itemHeight,
+                            child: ListTile(
+                              onTap: () => _onItemTapped(index),
+                              contentPadding: const EdgeInsets.only(left: 16, top: 2),
+                              leading: Icon(
+                                tab.icon,
+                                color: selected
+                                    ? scheme.onPrimaryContainer
+                                    : scheme.onSurface,
+                              ),
+                              title: Text(
+                                tab.title,
+                                style: TextStyle(
+                                  color: selected
+                                      ? scheme.onPrimaryContainer
+                                      : scheme.onSurface,
+                                ),
+                              ),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(128),
+                              ),
+                              tileColor: Colors.transparent,
+                            ),
+                          );
+                        }),
                       ),
                     ],
                   ),
                 ),
               ),
-
               Expanded(
                 child: SlideTransition(
                   position: slideAnimation,
                   child: FadeTransition(
-                    opacity: animationController,
+                    opacity: _animationController!,
                     child: Padding(
                       padding: const EdgeInsets.only(left: 12, top: 8),
                       child: ClipRRect(
-                        borderRadius: const BorderRadius.all(
-                          Radius.circular(8),
-                        ),
-                        child: _pages[_selectedIndex],
+                        borderRadius: BorderRadius.circular(8),
+                        child: _tabs[_selectedIndex].page,
                       ),
                     ),
                   ),

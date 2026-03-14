@@ -11,7 +11,7 @@ import 'package:webview_windows/webview_windows.dart';
 import '../widgets/expressive_refresh.dart';
 import '../services/download_manager.dart';
 
-
+import '../services/cwm_tracker_core/book_fetcher.dart';
 
 class cwm_NovelCatalogPage extends StatefulWidget {
   const cwm_NovelCatalogPage({super.key});
@@ -410,10 +410,12 @@ class _cwm_NovelCatalogPageState extends State<cwm_NovelCatalogPage> {
       }
 
       // 2. 先尝试接口请求章节（优先级最高）
-      bool apiSuccess = await _fetchChaptersByApi();
+      // bool apiSuccess = await _fetchChaptersByApi();
+
+      Map<String, dynamic> bookData = await BookFetcher.fetchBook(url);
 
       // 3. 如果接口失败，尝试点击展开按钮
-      if (!apiSuccess) {
+      if (bookData.isEmpty) {
         setState(() => _statusMessage = '接口失敗，使用Webview...');
         const clickScript = '''
           (function() {
@@ -430,28 +432,49 @@ class _cwm_NovelCatalogPageState extends State<cwm_NovelCatalogPage> {
         ''';
         await _webviewController.executeScript(clickScript);
         await Future.delayed(const Duration(seconds: 3));
-      }
 
-      // ========== 修复3：获取完整的页面HTML ==========
-      setState(() => _statusMessage = '解析章節數據...');
-      // 改为获取整个页面的HTML，而不仅仅是目录区域，确保能拿到书名/作者信息
-      final html = await _webviewController.executeScript('''
+        // ========== 修复3：获取完整的页面HTML ==========
+        setState(() => _statusMessage = '解析章節數據...');
+        // 改为获取整个页面的HTML，而不仅仅是目录区域，确保能拿到书名/作者信息
+        final html = await _webviewController.executeScript('''
         document.documentElement.outerHTML;
       ''');
 
-      if (html == null || html.toString().isEmpty) {
-        throw Exception('获取HTML为空，可能是反爬限制');
-      }
+        if (html == null || html.toString().isEmpty) {
+          throw Exception('获取HTML为空，可能是反爬限制');
+        }
 
-      // 5. 解析数据
-      final catalog = _parseCatalogFromHtml(html.toString());
-      setState(() {
-        _catalogData = catalog;
-        final totalChapters = catalog.fold(0, (s, v) => s + v.chapters.length);
-        _statusMessage = catalog.isNotEmpty
-            ? '解析成功！共 ${catalog.length} 卷，$totalChapters 章'
-            : '未解析到章节';
-      });
+        // 5. 解析数据
+        final catalog = _parseCatalogFromHtml(html.toString());
+        setState(() {
+          _catalogData = catalog;
+          final totalChapters = catalog.fold(
+            0,
+            (s, v) => s + v.chapters.length,
+          );
+          _statusMessage = catalog.isNotEmpty
+              ? '解析成功！共 ${catalog.length} 卷，$totalChapters 章'
+              : '未解析到章节';
+        });
+      } else {
+        setState(() => _statusMessage = '解析章節數據...');
+        
+        _novelAuthor = bookData["novelAuthor"];
+        _novelCover = bookData["novelCover"];
+        _novelTitle = bookData["novelTitle"];
+
+        setState(() {
+          final catalog = bookData["catalogData"];
+          _catalogData = catalog;
+          final totalChapters = catalog.fold(
+            0,
+            (s, v) => s + v.chapters.length,
+          );
+          _statusMessage = catalog.isNotEmpty
+              ? '解析成功！共 ${catalog.length} 卷，$totalChapters 章'
+              : '未解析到章节';
+        });
+      }
     } catch (e) {
       setState(() => _statusMessage = '加载失败：$e');
     } finally {
@@ -923,13 +946,13 @@ class _cwm_NovelCatalogPageState extends State<cwm_NovelCatalogPage> {
 
                       final String savePath = r'D:\\Flutter_Testing\\cwmxx\\u1';
                       DownloadManager.instance.addDownloadTask(
-                        taskType:  TaskType.ciweimao,
-                        coverUrl:  _novelCover,
-                        novelAuthor:  _novelAuthor,
-                        novelTitle:  _novelTitle,
-                        volumes:  _catalogData,
-                        isEpub:  _isEpub,
-                        savePath: savePath
+                        taskType: TaskType.ciweimao,
+                        coverUrl: _novelCover,
+                        novelAuthor: _novelAuthor,
+                        novelTitle: _novelTitle,
+                        volumes: _catalogData,
+                        isEpub: _isEpub,
+                        savePath: savePath,
                       );
 
                       setState(() {

@@ -44,6 +44,12 @@ dependencies:
   material_new_shapes: ^1.0.0
   shared_preferences: ^2.2.2
   path: ^1.8.3
+  encrypt: ^5.0.1
+  crypto: ^3.0.3
+  mime: ^1.0.4
+  archive: ^3.2.2
+  yaml: ^3.1.1
+
   # fluent_ui: ^4.14.0
 
 dev_dependencies:
