@@ -8,10 +8,13 @@ import 'services/download_manager.dart';
 import 'testing.dart';
 import 'testing_2.dart';
 import 'downloader_page.dart';
+import 'preferences.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await windowManager.ensureInitialized();
+
+  await UserPreferences.instance.initializePreferences();
 
   WindowOptions windowOptions = const WindowOptions(
     size: Size(1208, 789),
@@ -29,6 +32,8 @@ void main() async {
   });
 
   windowManager.addListener(MyWindowListener());
+
+  
   DownloadManager.instance.startDaemon();
   runApp(const MyApp());
 }
@@ -79,7 +84,7 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'UnU Novel Toolbox',
       theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
+        colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF2196F3)),
         // 优化涟漪效果的颜色
         splashFactory: InkRipple.splashFactory,
         splashColor: Colors.white12,
@@ -95,11 +100,7 @@ class AppTab {
   final IconData icon;
   final Widget page;
 
-  const AppTab({
-    required this.title,
-    required this.icon,
-    required this.page,
-  });
+  const AppTab({required this.title, required this.icon, required this.page});
 }
 
 class HomePage extends StatefulWidget {
@@ -118,15 +119,16 @@ class _HomePageState extends State<HomePage>
       icon: Icons.home,
       page: Center(child: Text("起始頁内容", style: TextStyle(fontSize: 24))),
     ),
+    const AppTab(title: "下載器", icon: Icons.download, page: DownloaderPage()),
     const AppTab(
-      title: "下載器",
-      icon: Icons.download,
-      page: DownloaderPage(),
+      title: "轉換工具",
+      icon: Icons.conveyor_belt,
+      page: Center(child: Text("轉換工具頁内容", style: TextStyle(fontSize: 24))),
     ),
     const AppTab(
       title: "設定",
       icon: Icons.settings,
-      page: Center(child: Text("設定页面内容", style: TextStyle(fontSize: 24))),
+      page: SettingsPage(),
     ),
     const AppTab(
       title: "測試頁面",
@@ -157,16 +159,20 @@ class _HomePageState extends State<HomePage>
         vsync: this,
         duration: const Duration(milliseconds: 300),
       );
-      _slideAnimation = Tween<Offset>(begin: const Offset(0, 0.3), end: Offset.zero)
-          .animate(
-        CurvedAnimation(
-          parent: _animationController!,
-          curve: Curves.easeOutCubic,
-        ),
-      );
+      _slideAnimation =
+          Tween<Offset>(begin: const Offset(0, 0.3), end: Offset.zero).animate(
+            CurvedAnimation(
+              parent: _animationController!,
+              curve: Curves.easeOutCubic,
+            ),
+          );
     } catch (e) {
-      final ctrl = AnimationController(vsync: this, duration: Duration.zero)..forward();
-      _slideAnimation = Tween<Offset>(begin: Offset.zero, end: Offset.zero).animate(ctrl);
+      final ctrl = AnimationController(vsync: this, duration: Duration.zero)
+        ..forward();
+      _slideAnimation = Tween<Offset>(
+        begin: Offset.zero,
+        end: Offset.zero,
+      ).animate(ctrl);
       _animationController = ctrl;
     }
   }
@@ -191,7 +197,8 @@ class _HomePageState extends State<HomePage>
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    final slideAnimation = _slideAnimation ??
+    final slideAnimation =
+        _slideAnimation ??
         Tween<Offset>(begin: Offset.zero, end: Offset.zero).animate(
           AnimationController(vsync: this, duration: Duration.zero)..forward(),
         );
@@ -222,7 +229,9 @@ class _HomePageState extends State<HomePage>
                 onPressed: () {
                   Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (_) => const MainDownloadScreen()),
+                    MaterialPageRoute(
+                      builder: (_) => const MainDownloadScreen(),
+                    ),
                   );
                 },
                 icon: const Icon(Icons.download_outlined),
@@ -238,8 +247,7 @@ class _HomePageState extends State<HomePage>
               ),
               const SizedBox(width: 4),
               IconButton.filledTonal(
-                onPressed: () async =>
-                await windowManager.isMaximized()
+                onPressed: () async => await windowManager.isMaximized()
                     ? windowManager.unmaximize()
                     : windowManager.maximize(),
                 icon: const Icon(Icons.crop_square_outlined),
@@ -269,14 +277,15 @@ class _HomePageState extends State<HomePage>
                         height: _itemHeight,
                         child: IgnorePointer(
                           child: Ink(
-                            
                             decoration: BoxDecoration(
-                              borderRadius: BorderRadius.all(Radius.circular(128)),
+                              borderRadius: const BorderRadius.all(
+                                Radius.circular(128),
+                              ),
                               color: scheme.primaryContainer,
                             ),
-                          )
                           ),
                         ),
+                      ),
 
                       Column(
                         spacing: _itemSpacing,
@@ -287,7 +296,10 @@ class _HomePageState extends State<HomePage>
                             height: _itemHeight,
                             child: ListTile(
                               onTap: () => _onItemTapped(index),
-                              contentPadding: const EdgeInsets.only(left: 16, top: 2),
+                              contentPadding: const EdgeInsets.only(
+                                left: 16,
+                                top: 2,
+                              ),
                               leading: Icon(
                                 tab.icon,
                                 color: selected
@@ -332,6 +344,60 @@ class _HomePageState extends State<HomePage>
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+
+class SettingsPage extends StatefulWidget {
+  const SettingsPage({super.key});
+
+  @override
+  State<SettingsPage> createState() => _SettingsPageState();
+}
+
+class _SettingsPageState extends State<SettingsPage> {
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: CustomScrollView(
+        slivers: [
+          SliverAppBar(
+            surfaceTintColor: Theme.of(context).colorScheme.surface,
+            backgroundColor: Theme.of(context).colorScheme.surface,
+
+            expandedHeight: 80.0,
+            floating: true,
+            pinned: true,
+            snap: false,
+
+            flexibleSpace: const FlexibleSpaceBar(
+              title: Text('設定'),
+              titlePadding: EdgeInsetsDirectional.only(start: 16, bottom: 16),
+            ),
+          ),
+
+          const SliverToBoxAdapter(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: const [
+                Text("data"),
+              ],
+            ),
+          ),
+
+          // SliverList(
+          //   delegate: SliverChildBuilderDelegate(
+          //     (context, index) => ListTile(
+          //       leading: const Icon(Icons.settings_outlined),
+          //       title: Text('设置选项 ${index + 1}'),
+          //       trailing: const Icon(Icons.arrow_forward_ios),
+          //     ),
+          //     childCount: 20,
+          //   ),
+          // ),
+        ],
       ),
     );
   }
