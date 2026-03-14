@@ -4,11 +4,11 @@
   <p>小説解析・ダウンロードツール（Flutter Windowsデスクトップアプリ）</p>
 </div>
 
-<div align="center">
-  [![Language](https://img.shields.io/github/languages/top/DinixUse/UnU-Novel-Toolbox?color=informational)](https://github.com/DinixUse/UnU-Novel-Toolbox)
-  [![Built with Flutter](https://img.shields.io/badge/Engine-Flutter-blue)](https://flutter.dev)
-  [![Stars](https://img.shields.io/github/stars/DinixUse/UnU-Novel-Toolbox?color=yellow)](https://github.com/DinixUse/UnU-Novel-Toolbox/stargazers)
-</div>
+<p align="center">
+  <a href="https://github.com/DinixUse/UnU-Novel-Toolbox"><img src="https://img.shields.io/github/languages/top/DinixUse/UnU-Novel-Toolbox?color=informational&style=for-the-badge" alt="Language"></a>
+  <a href="https://github.com/DinixUse/UnU-Novel-Toolbox/stargazers"><img src="https://img.shields.io/github/stars/DinixUse/UnU-Novel-Toolbox?color=yellow&style=for-the-badge" alt="Stars"></a>
+  <a href="https://flutter.dev"><img src="https://img.shields.io/badge/Engine-Flutter-blue?style=for-the-badge" alt="Built with Flutter"></a>
+</p>
 
 UnU Novel Toolbox 是一個 Flutter Windows 桌面應用，針對小說下載與解析做優化。主要功能如下：
 
