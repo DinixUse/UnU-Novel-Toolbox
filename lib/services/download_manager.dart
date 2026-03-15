@@ -9,6 +9,8 @@ import 'package:path/path.dart';
 import 'package:webview_windows/webview_windows.dart';
 import 'package:path/path.dart' as path;
 
+import '../preferences.dart';
+
 // ========== 1. 刺猬猫内容提取工具（完全移除Isolate依赖） ==========
 class cwm_NovelExtractor {
   late final WebviewController _webviewController;
@@ -100,7 +102,7 @@ class cwm_NovelExtractor {
       final document = parse(html);
       // 查找包含付费信息的元素
       final heavyFontElements = document.getElementsByClassName('heavy-font');
-      
+
       for (var element in heavyFontElements) {
         final bTag = element.querySelector('b');
         if (bTag != null) {
@@ -114,7 +116,7 @@ class cwm_NovelExtractor {
           }
         }
       }
-      
+
       // 备用方案：使用正则表达式直接匹配，提高兼容性
       final regExp = RegExp(r'购买本章\s*<b>\s*(\d+)\s*币</b>');
       final match = regExp.firstMatch(html);
@@ -124,7 +126,7 @@ class cwm_NovelExtractor {
           return '該章節是付費章節，不提供下載';
         }
       }
-      
+
       return null; // 不是付费章节
     } catch (e) {
       print('付费章节检查失败：$e');
@@ -234,7 +236,9 @@ class TaskModel {
 }
 
 // ========== 下载管理器 ==========
-class DownloadManager {
+class DownloadManager extends ChangeNotifier {
+  final ValueNotifier<double> taskProgress = ValueNotifier(0.0);
+
   String novelsSavePath = "C:\\";
   int processConcurrent = 3;
 
@@ -324,6 +328,102 @@ class DownloadManager {
         // _infoMap[""] = ""
 
         await _infoJson.writeAsString(jsonEncode(_infoMap));
+
+        // 1. 基础边界校验
+        if (_taskList.isEmpty || processConcurrent <= 0) {
+          print("错误：任务列表为空或并发数无效");
+          return;
+        }
+
+        final int totalTasks = _taskList.length;
+        final int lastIndex = totalTasks - 1; // 闭区间的最大有效索引
+
+        // 2. 计算每个分片的基础长度（向上取整，避免任务遗漏）
+        int singleTaskCount = (totalTasks / processConcurrent).ceil();
+        List<(int, int)> taskRanges = [];
+
+        for (int i = 0; i < processConcurrent; i++) {
+          // 闭区间：start 是当前分片的起始索引
+          int start = i * singleTaskCount;
+
+          // 闭区间：end 初始为下一分片起始索引-1（保证闭区间连续）
+          int end = (i + 1) * singleTaskCount - 1;
+
+          // 3. 闭区间关键适配：
+          // - 最后一个分片的end取最大有效索引
+          // - 若start已超过最大索引，直接终止循环（避免空分片）
+          if (start > lastIndex) {
+            break;
+          }
+          if (i == processConcurrent - 1 || end > lastIndex) {
+            end = lastIndex;
+          }
+
+          taskRanges.add((start, end));
+
+          // 提前终止：如果已经覆盖到最后一个索引，无需继续生成分片
+          if (end == lastIndex) {
+            break;
+          }
+        }
+
+
+        Process.run(
+            path.join(
+              UserPreferences.instance.webWebBrowserPath,
+              "web_web_browser.exe",
+            ),
+            [
+              "--tasktype=cwm",
+              "--jsonfilepath=${_infoJson.path}",
+              "--taskmergestart=0",
+              "--taskmergeend=${_taskList.length - 1}",
+            ],
+          );
+        // 4. 启动子进程处理每个分片（遍历实际生成的分片，避免空进程）
+        // for (int i = 0; i < taskRanges.length; i++) {
+        //   int processNo = i + 1; // 进程编号（从1开始）
+        //   var (start, end) = taskRanges[i];
+
+        //   // 打印分片信息（便于调试）
+        //   print("进程$processNo 处理区间：[$start, $end]（闭区间）");
+
+        //   // 启动进程并监听所有状态
+        //   Process.run(
+        //     path.join(
+        //       UserPreferences.instance.webWebBrowserPath,
+        //       "web_web_browser.exe",
+        //     ),
+        //     [
+        //       "--tasktype=cwm",
+        //       "--jsonfilepath=${_infoJson.path}",
+        //       "--taskmergestart=$start",
+        //       "--taskmergeend=$end",
+        //     ],
+        //   ).asStream().listen(
+        //     (event) {
+        //       // 输出子进程日志
+        //       if (event.stdout.isNotEmpty) {
+        //         print("子进程$processNo 标准输出：${event.stdout}");
+        //       }
+        //       if (event.stderr.isNotEmpty) {
+        //         print("子进程$processNo 错误输出：${event.stderr}");
+        //       }
+        //       // 检查进程退出码（判断执行是否成功）
+        //       if (event.exitCode != null) {
+        //         if (event.exitCode == 0) {
+        //           print("子进程$processNo 执行完成（退出码：${event.exitCode}）");
+        //         } else {
+        //           print("子进程$processNo 执行失败（退出码：${event.exitCode}）");
+        //         }
+        //       }
+        //     },
+        //     onError: (error) {
+        //       // 捕获进程启动失败的异常
+        //       print("子进程$processNo 启动失败：$error");
+        //     },
+        //   );
+        // }
       } else {
         // 等待100ms后重试（避免CPU空转）
         await Future.delayed(const Duration(milliseconds: 100));
@@ -380,7 +480,8 @@ class DownloadManager {
             if (content.startsWith('提取失败') ||
                 content.startsWith('URL格式错误') ||
                 content.startsWith('未找到') ||
-                content == '該章節是付費章節，不提供下載') { // 新增付费提示判断
+                content == '該章節是付費章節，不提供下載') {
+              // 新增付费提示判断
               throw Exception(content);
             }
 

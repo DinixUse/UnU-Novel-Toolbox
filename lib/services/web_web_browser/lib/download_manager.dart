@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:html/parser.dart' show parse;
 import 'package:html/dom.dart' as dom;
+import 'package:path/path.dart';
 import 'package:webview_windows/webview_windows.dart';
 import 'package:path/path.dart' as path;
 
@@ -38,23 +39,26 @@ class cwm_NovelExtractor {
 
     try {
       await _webviewController.loadUrl(url);
-      
+
       // 优化：监听页面加载完成事件，替代固定延迟
       Completer<void> loadCompleter = Completer();
       StreamSubscription? loadSubscription;
-      
+
       loadSubscription = _webviewController.loadingState.listen((state) {
         if (state == LoadingState.navigationCompleted) {
           loadCompleter.complete();
           loadSubscription?.cancel();
         }
       });
-      
+
       // 5秒超时保护
-      await loadCompleter.future.timeout(const Duration(seconds: 5), onTimeout: () {
-        loadSubscription?.cancel();
-        throw TimeoutException('页面加载超时');
-      });
+      await loadCompleter.future.timeout(
+        const Duration(seconds: 5),
+        onTimeout: () {
+          loadSubscription?.cancel();
+          throw TimeoutException('页面加载超时');
+        },
+      );
 
       final dynamic result = await _webviewController.executeScript(
         'document.documentElement.outerHTML',
@@ -65,7 +69,7 @@ class cwm_NovelExtractor {
         return '获取页面HTML失败，返回内容为空';
       }
 
-      // 先检查是否为付费章节
+      // ========== 新增：付费章节检测逻辑 ==========
       final payCheckResult = _checkIfPaidChapter(htmlContent);
       if (payCheckResult != null) {
         return payCheckResult; // 返回付费提示
@@ -90,17 +94,17 @@ class cwm_NovelExtractor {
     return regex.hasMatch(url);
   }
 
-  /// 检查是否为付费章节
+  // ========== 新增：付费章节检测方法 ==========
   String? _checkIfPaidChapter(String html) {
     try {
       final document = parse(html);
       // 查找包含付费信息的元素
       final heavyFontElements = document.getElementsByClassName('heavy-font');
-      
+
       for (var element in heavyFontElements) {
         final bTag = element.querySelector('b');
         if (bTag != null) {
-          // 提取数字部分
+          // 提取数字部分（移除所有非数字字符）
           final text = bTag.text.replaceAll(RegExp(r'[^\d]'), '');
           if (text.isNotEmpty) {
             final coinNum = int.tryParse(text) ?? 0;
@@ -110,8 +114,8 @@ class cwm_NovelExtractor {
           }
         }
       }
-      
-      // 备用方案：使用正则表达式直接匹配
+
+      // 备用方案：使用正则表达式直接匹配，提高兼容性
       final regExp = RegExp(r'购买本章\s*<b>\s*(\d+)\s*币</b>');
       final match = regExp.firstMatch(html);
       if (match != null) {
@@ -120,7 +124,7 @@ class cwm_NovelExtractor {
           return '該章節是付費章節，不提供下載';
         }
       }
-      
+
       return null; // 不是付费章节
     } catch (e) {
       print('付费章节检查失败：$e');
@@ -138,17 +142,11 @@ class cwm_NovelExtractor {
 
       // 清理干扰标签
       final allSpanTags = contentDiv.getElementsByTagName('span');
-      for (var span in allSpanTags) {
-        span.remove();
-      }
+      for (var span in allSpanTags) span.remove();
       final pgidITags = contentDiv.querySelectorAll('i[data-pgid]');
-      for (var iTag in pgidITags) {
-        iTag.remove();
-      }
+      for (var iTag in pgidITags) iTag.remove();
       final numITags = contentDiv.querySelectorAll('i.J_Num, i.num');
-      for (var iTag in numITags) {
-        iTag.remove();
-      }
+      for (var iTag in numITags) iTag.remove();
 
       final paragraphs = contentDiv.getElementsByClassName('chapter');
       if (paragraphs.isEmpty) {
@@ -157,11 +155,11 @@ class cwm_NovelExtractor {
 
       final List<String> cleanContent = [];
       for (var p in paragraphs) {
-        String text = p.text.trim()
-            .replaceAll(RegExp(r'\s+'), ' ')
-            .trim();
+        String text = p.text.trim().replaceAll(RegExp(r'\s+'), ' ').trim();
 
-        if (text.isNotEmpty && text != '———' && !p.classes.contains('author_say')) {
+        if (text.isNotEmpty &&
+            text != '———' &&
+            !p.classes.contains('author_say')) {
           cleanContent.add(text);
         }
       }
@@ -179,7 +177,15 @@ class cwm_NovelExtractor {
 
 // ========== 2. 数据模型（保持不变） ==========
 enum TaskType { ciweimao, jjwxc, yamibo }
-enum DownloadTaskStatus { pending, downloading, paused, completed, failed, cancelled }
+
+enum DownloadTaskStatus {
+  pending,
+  downloading,
+  paused,
+  completed,
+  failed,
+  cancelled,
+}
 
 class cwm_NovelChapter {
   final String title;
@@ -199,10 +205,7 @@ class cwm_NovelVolume {
   final String volumeName;
   final List<cwm_NovelChapter> chapters;
 
-  cwm_NovelVolume({
-    required this.volumeName,
-    required this.chapters,
-  });
+  cwm_NovelVolume({required this.volumeName, required this.chapters});
 }
 
 class TaskModel {
@@ -224,19 +227,28 @@ class TaskModel {
     required this.savePath,
   });
 
-  String get taskId => '${taskType}_${novelTitle}_$novelAuthor'.replaceAll(RegExp(r'\s+'), '_');
+  String get taskId => '${taskType}_${novelTitle}_${novelAuthor}'.replaceAll(
+    RegExp(r'\s+'),
+    '_',
+  );
 }
 
-// ========== 3. 下载管理器（核心：纯主线程实现，无Isolate依赖） ==========
-class DownloadManager {
+// ========== 下载管理器 ==========
+class DownloadManager extends ChangeNotifier {
+  final ValueNotifier<double> taskProgress = ValueNotifier(0.0);
+
+  String novelsSavePath = "C:\\";
+  int processConcurrent = 3;
+
   List<TaskModel> tasks = [];
   static final DownloadManager instance = DownloadManager._internal();
   DownloadManager._internal(); // 移除Isolate初始化代码
 
-  final StreamController<void> _taskChangedController = StreamController<void>.broadcast();
+  final StreamController<void> _taskChangedController =
+      StreamController<void>.broadcast();
   bool _daemonRunning = false;
   final Map<String, Map<String, dynamic>> _taskProgress = {};
-  
+
   // 关键：限制并发下载数（避免创建过多WebView导致崩溃）
   final int _maxConcurrent = 2;
   int _currentActive = 0;
@@ -258,6 +270,17 @@ class DownloadManager {
     _taskChangedController.close();
   }
 
+  /// 移除Windows路径中所有非法字符
+  /// Windows路径非法字符包括：< > : " / \ | ? *
+  String removeWindowsInvalidPathChars(String input) {
+    // 定义Windows路径非法字符的正则表达式（转义特殊字符）
+    // 正则中需要转义的字符：\ " /，其他字符直接列出
+    RegExp invalidCharsRegex = RegExp(r'[<>:"/\\|?*]');
+
+    // 将所有非法字符替换为空字符串
+    return input.replaceAll(invalidCharsRegex, '');
+  }
+
   // 任务处理核心逻辑（纯主线程）
   Future<void> _processTasks() async {
     while (_daemonRunning && tasks.isNotEmpty) {
@@ -265,12 +288,94 @@ class DownloadManager {
       if (_currentActive < _maxConcurrent) {
         final task = tasks.removeAt(0);
         _currentActive++;
+
         // 异步执行单个任务（不阻塞队列处理）
-        _downloadSingleTask(task).whenComplete(() {
-          _currentActive--;
-          // 任务完成后继续处理下一个
-          if (_daemonRunning) _processTasks();
-        });
+        // _downloadSingleTask(task).whenComplete(() {
+        //   _currentActive--;
+        //   // 任务完成后继续处理下一个
+        //   if (_daemonRunning) _processTasks();
+        // });
+
+        String novelRootPath = path.join(
+          novelsSavePath,
+          removeWindowsInvalidPathChars(task.novelTitle).trim(),
+        );
+        Directory targetDir = Directory(novelRootPath);
+        if (!await targetDir.exists()) {
+          await targetDir.create(recursive: true);
+        }
+
+        File _infoJson = File(path.join(novelRootPath, "BookInfo.json"));
+        Map<String, dynamic> _infoMap = {};
+        List<Map<String, String>> _taskList = [];
+
+        for (final _volume in task.volumes) {
+          for (final _chapter in _volume.chapters) {
+            _taskList.add({
+              "url": _chapter.url,
+              "savepath": path.join(
+                novelRootPath,
+                removeWindowsInvalidPathChars(_volume.volumeName).trim(),
+                "${removeWindowsInvalidPathChars(_chapter.title).trim()}.txt",
+              ),
+            });
+          }
+        }
+
+        _infoMap["tasks"] = _taskList;
+        // _infoMap[""] = ""
+
+        await _infoJson.writeAsString(jsonEncode(_infoMap));
+
+        // 1. 基础边界校验
+        if (_taskList.isEmpty || processConcurrent <= 0) {
+          print("错误：任务列表为空或并发数无效");
+          return;
+        }
+
+        final int totalTasks = _taskList.length;
+        final int lastIndex = totalTasks - 1; // 闭区间的最大有效索引
+
+        // 2. 计算每个分片的基础长度（向上取整，避免任务遗漏）
+        int singleTaskCount = (totalTasks / processConcurrent).ceil();
+        List<(int, int)> taskRanges = [];
+
+        for (int i = 0; i < processConcurrent; i++) {
+          // 闭区间：start 是当前分片的起始索引
+          int start = i * singleTaskCount;
+
+          // 闭区间：end 初始为下一分片起始索引-1（保证闭区间连续）
+          int end = (i + 1) * singleTaskCount - 1;
+
+          // 3. 闭区间关键适配：
+          // - 最后一个分片的end取最大有效索引
+          // - 若start已超过最大索引，直接终止循环（避免空分片）
+          if (start > lastIndex) {
+            break;
+          }
+          if (i == processConcurrent - 1 || end > lastIndex) {
+            end = lastIndex;
+          }
+
+          taskRanges.add((start, end));
+
+          // 提前终止：如果已经覆盖到最后一个索引，无需继续生成分片
+          if (end == lastIndex) {
+            break;
+          }
+        }
+
+        // 4. 启动子进程处理每个分片（遍历实际生成的分片，避免空进程）
+        for (int i = 0; i < taskRanges.length; i++) {
+          int processNo = i + 1; // 进程编号（从1开始）
+          var (start, end) = taskRanges[i];
+
+          // 打印分片信息（便于调试）
+          print("进程$processNo 处理区间：[$start, $end]（闭区间）");
+
+          // 启动进程并监听所有状态
+          
+        }
       } else {
         // 等待100ms后重试（避免CPU空转）
         await Future.delayed(const Duration(milliseconds: 100));
@@ -281,18 +386,21 @@ class DownloadManager {
   // 下载单个任务（纯主线程）
   Future<void> _downloadSingleTask(TaskModel task) async {
     _initTaskProgress(task);
-    final totalChapters = task.volumes.fold(0, (sum, vol) => sum + vol.chapters.length);
+    final totalChapters = task.volumes.fold(
+      0,
+      (sum, vol) => sum + vol.chapters.length,
+    );
     int completed = 0;
 
     // 1. 初始化WebView提取器（主线程）
     final extractor = cwm_NovelExtractor();
     final initSuccess = await extractor.initialize();
-    
+
     if (!initSuccess) {
       _updateTaskProgress(task, {
         'error': 'WebView初始化失败，请检查环境',
         'status': DownloadTaskStatus.failed.name,
-        'progress': 0.0
+        'progress': 0.0,
       });
       _currentActive--;
       return;
@@ -319,12 +427,13 @@ class DownloadManager {
           try {
             // 3. 下载章节内容（主线程WebView）
             final content = await extractor.getNovelContent(chapter.url);
-            
-            // 检查内容是否有效
-            if (content.startsWith('提取失败') || 
+
+            // 检查内容是否有效（新增：包含付费提示判断）
+            if (content.startsWith('提取失败') ||
                 content.startsWith('URL格式错误') ||
                 content.startsWith('未找到') ||
-                content == '該章節是付費章節，不提供下載') { // 新增付费提示判断
+                content == '該章節是付費章節，不提供下載') {
+              // 新增付费提示判断
               throw Exception(content);
             }
 
@@ -335,13 +444,12 @@ class DownloadManager {
             completed++;
             chapter.progress = 1.0;
             chapter.status = DownloadTaskStatus.completed;
-            
+
             _updateTaskProgress(task, {
               'completed': completed,
               'progress': totalChapters > 0 ? completed / totalChapters : 1.0,
               'currentChapter': chapter.title,
             });
-
           } catch (e) {
             // 单个章节失败，标记并继续下一个
             chapter.status = DownloadTaskStatus.failed;
@@ -357,12 +465,11 @@ class DownloadManager {
       // 任务全部完成
       _updateTaskProgress(task, {
         'progress': 1.0,
-        'status': completed == totalChapters 
-            ? DownloadTaskStatus.completed.name 
+        'status': completed == totalChapters
+            ? DownloadTaskStatus.completed.name
             : DownloadTaskStatus.failed.name,
         'error': completed < totalChapters ? '部分章节下载失败' : '',
       });
-
     } catch (e) {
       // 任务整体失败
       _updateTaskProgress(task, {
@@ -378,7 +485,11 @@ class DownloadManager {
   }
 
   // 保存章节为TXT文件（Windows兼容）
-  static Future<void> _saveChapterToTxt(String saveDir, String title, String content) async {
+  static Future<void> _saveChapterToTxt(
+    String saveDir,
+    String title,
+    String content,
+  ) async {
     // 清理Windows非法文件名字符
     final safeTitle = title.replaceAll(RegExp(r'[\/:*?"<>|]'), '_').trim();
     final filePath = path.join(saveDir, '$safeTitle.txt');
@@ -394,7 +505,7 @@ class DownloadManager {
     final utf8 = Encoding.getByName('utf-8');
     if (utf8 == null) throw Exception('不支持UTF-8编码');
     await file.writeAsString(content, encoding: utf8);
-    
+
     print('章节已保存：$filePath');
   }
 
@@ -417,11 +528,11 @@ class DownloadManager {
       isEpub: isEpub,
       savePath: savePath,
     );
-    
+
     tasks.add(newTask);
     _initTaskProgress(newTask);
     _taskChangedController.sink.add(null);
-    
+
     // 如果守护进程已启动，触发任务处理
     if (_daemonRunning) {
       _processTasks();
@@ -454,18 +565,23 @@ class DownloadManager {
 
   // 获取单个任务进度
   Map<String, dynamic> getTaskProgress(TaskModel task) {
-    return _taskProgress[task.taskId] ?? {
-      'taskId': task.taskId,
-      'novelTitle': task.novelTitle,
-      'completed': 0,
-      'total': task.volumes.fold(0, (sum, vol) => sum + vol.chapters.length),
-      'progress': 0.0,
-      'currentChapter': '',
-      'status': DownloadTaskStatus.pending.name,
-      'error': '',
-    };
+    return _taskProgress[task.taskId] ??
+        {
+          'taskId': task.taskId,
+          'novelTitle': task.novelTitle,
+          'completed': 0,
+          'total': task.volumes.fold(
+            0,
+            (sum, vol) => sum + vol.chapters.length,
+          ),
+          'progress': 0.0,
+          'currentChapter': '',
+          'status': DownloadTaskStatus.pending.name,
+          'error': '',
+        };
   }
 
   // 通过ID获取任务进度
-  Map<String, dynamic>? getTaskProgressById(String taskId) => _taskProgress[taskId];
+  Map<String, dynamic>? getTaskProgressById(String taskId) =>
+      _taskProgress[taskId];
 }

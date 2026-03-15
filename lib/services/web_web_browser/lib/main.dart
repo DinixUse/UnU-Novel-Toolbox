@@ -38,6 +38,10 @@ void main(List<String> arguments) async {
   WidgetsFlutterBinding.ensureInitialized();
   // logToFile('Application started');
 
+  debugPrint = (String? message, {int? wrapWidth}) {
+    if (message != null) stdout.writeln(message);
+  };
+
   final parser = ArgParser();
   parser.addOption('tasktype', abbr: 't');
   parser.addOption('jsonfilepath', abbr: 'p');
@@ -51,7 +55,10 @@ void main(List<String> arguments) async {
   taskmergestart = results['taskmergestart'].toString();
   taskmergeend = results['taskmergeend'].toString();
 
-  if(tasktype == "" || jsonfilepath == "" || taskmergestart == "" || taskmergeend == "") {
+  if (tasktype == "" ||
+      jsonfilepath == "" ||
+      taskmergestart == "" ||
+      taskmergeend == "") {
     windowManager.destroy();
     exit(0);
   }
@@ -125,8 +132,6 @@ class _MyWidgetState extends State<MyWidget> {
                   .toList();
           //logToFile("Tasklist Initialized: $taskList");
 
-          
-
           int _start = int.parse(taskmergestart);
           int _end = int.parse(taskmergeend);
 
@@ -134,7 +139,6 @@ class _MyWidgetState extends State<MyWidget> {
           //logToFile(taskmergeend);
 
           for (int i = _start; i <= _end; i++) {
-
             // 调用带重试机制的提取方法
             String _nvcontent = await extractNovelWithRetry(
               extractor,
@@ -148,6 +152,8 @@ class _MyWidgetState extends State<MyWidget> {
             await Directory(_saveFile.parent.path).create(recursive: true);
 
             await _saveFile.writeAsString(_nvcontent);
+            stdout.writeln(1);
+            stdout.flush();
 
             // logToFile("gonna finish!: $_nvcontent");
           }
