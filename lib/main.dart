@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:window_manager/window_manager.dart';
@@ -387,63 +388,68 @@ class SettingsPage extends StatefulWidget {
 class _SettingsPageState extends State<SettingsPage> {
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor:
-          UserPreferences
-                  .instance
-                  .currentSettingsMap["scaffold_background_image_url"] ==
-              ""
-          ? Theme.of(context).colorScheme.surface
-          : Theme.of(context).colorScheme.surface.withAlpha(
-              UserPreferences.instance.currentSettingsMap["ui_alpha"],
+    return BackdropFilter(
+      filter: UserPreferences.instance.currentSettingsMap["enable_blur"] == true
+          ? ImageFilter.blur(sigmaX: 10, sigmaY: 10)
+          : ImageFilter.blur(sigmaX: 0, sigmaY: 0),
+      child: Scaffold(
+        backgroundColor:
+            UserPreferences
+                    .instance
+                    .currentSettingsMap["scaffold_background_image_url"] ==
+                ""
+            ? Theme.of(context).colorScheme.surface
+            : Theme.of(context).colorScheme.surface.withAlpha(
+                UserPreferences.instance.currentSettingsMap["ui_alpha"],
+              ),
+        body: CustomScrollView(
+          slivers: [
+            SliverAppBar(
+              surfaceTintColor:
+                  UserPreferences
+                          .instance
+                          .currentSettingsMap["scaffold_background_image_url"] ==
+                      ""
+                  ? Theme.of(context).colorScheme.surface
+                  : Colors.transparent,
+              backgroundColor:
+                  UserPreferences
+                          .instance
+                          .currentSettingsMap["scaffold_background_image_url"] ==
+                      ""
+                  ? Theme.of(context).colorScheme.surface
+                  : Colors.transparent,
+
+              expandedHeight: 80.0,
+              floating: true,
+              pinned: true,
+              snap: false,
+
+              flexibleSpace: const FlexibleSpaceBar(
+                title: Text('設定'),
+                titlePadding: EdgeInsetsDirectional.only(start: 16, bottom: 16),
+              ),
             ),
-      body: CustomScrollView(
-        slivers: [
-          SliverAppBar(
-            surfaceTintColor:
-                UserPreferences
-                        .instance
-                        .currentSettingsMap["scaffold_background_image_url"] ==
-                    ""
-                ? Theme.of(context).colorScheme.surface
-                : Colors.transparent,
-            backgroundColor:
-                UserPreferences
-                        .instance
-                        .currentSettingsMap["scaffold_background_image_url"] ==
-                    ""
-                ? Theme.of(context).colorScheme.surface
-                : Colors.transparent,
 
-            expandedHeight: 80.0,
-            floating: true,
-            pinned: true,
-            snap: false,
-
-            flexibleSpace: const FlexibleSpaceBar(
-              title: Text('設定'),
-              titlePadding: EdgeInsetsDirectional.only(start: 16, bottom: 16),
+            const SliverToBoxAdapter(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: const [Text("data")],
+              ),
             ),
-          ),
 
-          const SliverToBoxAdapter(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: const [Text("data")],
-            ),
-          ),
-
-          // SliverList(
-          //   delegate: SliverChildBuilderDelegate(
-          //     (context, index) => ListTile(
-          //       leading: const Icon(Icons.settings_outlined),
-          //       title: Text('设置选项 ${index + 1}'),
-          //       trailing: const Icon(Icons.arrow_forward_ios),
-          //     ),
-          //     childCount: 20,
-          //   ),
-          // ),
-        ],
+            // SliverList(
+            //   delegate: SliverChildBuilderDelegate(
+            //     (context, index) => ListTile(
+            //       leading: const Icon(Icons.settings_outlined),
+            //       title: Text('设置选项 ${index + 1}'),
+            //       trailing: const Icon(Icons.arrow_forward_ios),
+            //     ),
+            //     childCount: 20,
+            //   ),
+            // ),
+          ],
+        ),
       ),
     );
   }

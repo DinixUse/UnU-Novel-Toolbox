@@ -1,3 +1,5 @@
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
 import 'package:unu_novel_toolbox/preferences.dart';
 
@@ -31,31 +33,40 @@ class _DownloaderPageState extends State<DownloaderPage>
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.transparent,
-      appBar: AppBar(
+    return BackdropFilter(
+      filter: UserPreferences.instance.currentSettingsMap["enable_blur"] == true
+          ? ImageFilter.blur(sigmaX: 10, sigmaY: 10)
+          : ImageFilter.blur(sigmaX: 0, sigmaY: 0),
+      child: Scaffold(
         backgroundColor:
-          UserPreferences
-                  .instance
-                  .currentSettingsMap["scaffold_background_image_url"] == ""
-          ? Theme.of(context).colorScheme.surface
-          : Theme.of(context).colorScheme.surface.withAlpha(UserPreferences.instance.currentSettingsMap["ui_alpha"]),
-        title: TabBar(
-          controller: _tabController,
-          isScrollable: true,
-          tabs: _tabTitles.map((title) => Tab(text: title)).toList(),
-        ),
-      ),
+            UserPreferences
+                    .instance
+                    .currentSettingsMap["scaffold_background_image_url"] ==
+                ""
+            ? Theme.of(context).colorScheme.surface
+            : Theme.of(context).colorScheme.surface.withAlpha(
+                UserPreferences.instance.currentSettingsMap["ui_alpha"],
+              ),
+        appBar: AppBar(
+          backgroundColor: Colors.transparent,
 
-      body: TabBarView(
-        controller: _tabController,
-        children: _tabTitles.map((title) {
-          if (title == "刺蝟貓") {
-            return const cwm_NovelCatalogPage();
-          } else {
-            return const Center(child: Text("施工中"));
-          }
-        }).toList(),
+          title: TabBar(
+            controller: _tabController,
+            isScrollable: true,
+            tabs: _tabTitles.map((title) => Tab(text: title)).toList(),
+          ),
+        ),
+
+        body: TabBarView(
+          controller: _tabController,
+          children: _tabTitles.map((title) {
+            if (title == "刺蝟貓") {
+              return const cwm_NovelCatalogPage();
+            } else {
+              return const Center(child: Text("施工中"));
+            }
+          }).toList(),
+        ),
       ),
     );
   }

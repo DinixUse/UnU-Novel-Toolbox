@@ -19,7 +19,8 @@ class UserPreferences {
     "image_opacity": 0.5,
     "download_root_path": "C:\\UnUDownloads",
     "app_color": 4280391411,
-    "dynamic_app_color": false
+    "dynamic_app_color": false,
+    "enable_blur": false
   };
 
   Map<String, dynamic> currentSettingsMap = {};

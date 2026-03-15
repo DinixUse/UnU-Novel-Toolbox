@@ -1,8 +1,9 @@
 {
-    "scaffold_background_image_url": "",
+    "scaffold_background_image_url": "D:\\down\\Edge Download\\1237862.jpg",
     "ui_alpha": 128,
     "image_opacity": 0.5,
     "download_root_path": "C:\\UnUDownloads",
     "app_color": 4280391411,
-    "dynamic_app_color": false
+    "dynamic_app_color": false,
+    "enable_blur": false
 }

@@ -494,15 +494,15 @@ class _cwm_NovelCatalogPageState extends State<cwm_NovelCatalogPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       //appBar: AppBar(title: const Text('刺蝟貓小説解析下載工具')),
-      backgroundColor:
-          UserPreferences
-                  .instance
-                  .currentSettingsMap["scaffold_background_image_url"] ==
-              ""
-          ? Theme.of(context).colorScheme.surface
-          : Theme.of(context).colorScheme.surface.withAlpha(
-              UserPreferences.instance.currentSettingsMap["ui_alpha"],
-            ),
+      backgroundColor: Colors.transparent,
+          // UserPreferences
+          //         .instance
+          //         .currentSettingsMap["scaffold_background_image_url"] ==
+          //     ""
+          // ? Theme.of(context).colorScheme.surface
+          // : Theme.of(context).colorScheme.surface.withAlpha(
+          //     UserPreferences.instance.currentSettingsMap["ui_alpha"],
+          //   ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
         child: Column(

@@ -65,6 +65,12 @@ class cwm_NovelExtractor {
         return '获取页面HTML失败，返回内容为空';
       }
 
+      // 先检查是否为付费章节
+      final payCheckResult = _checkIfPaidChapter(htmlContent);
+      if (payCheckResult != null) {
+        return payCheckResult; // 返回付费提示
+      }
+
       return _extractNovelFromHtml(htmlContent);
     } catch (e) {
       return '提取失败：$e';
@@ -82,6 +88,44 @@ class cwm_NovelExtractor {
     if (url.isEmpty) return false;
     final regex = RegExp(r'^https://www\.ciweimao\.com/chapter/\d+$');
     return regex.hasMatch(url);
+  }
+
+  /// 检查是否为付费章节
+  String? _checkIfPaidChapter(String html) {
+    try {
+      final document = parse(html);
+      // 查找包含付费信息的元素
+      final heavyFontElements = document.getElementsByClassName('heavy-font');
+      
+      for (var element in heavyFontElements) {
+        final bTag = element.querySelector('b');
+        if (bTag != null) {
+          // 提取数字部分
+          final text = bTag.text.replaceAll(RegExp(r'[^\d]'), '');
+          if (text.isNotEmpty) {
+            final coinNum = int.tryParse(text) ?? 0;
+            if (coinNum > 0) {
+              return '該章節是付費章節，不提供下載';
+            }
+          }
+        }
+      }
+      
+      // 备用方案：使用正则表达式直接匹配
+      final regExp = RegExp(r'购买本章\s*<b>\s*(\d+)\s*币</b>');
+      final match = regExp.firstMatch(html);
+      if (match != null) {
+        final coinNum = int.tryParse(match.group(1)!) ?? 0;
+        if (coinNum > 0) {
+          return '該章節是付費章節，不提供下載';
+        }
+      }
+      
+      return null; // 不是付费章节
+    } catch (e) {
+      print('付费章节检查失败：$e');
+      return null; // 检查失败时继续提取内容
+    }
   }
 
   String _extractNovelFromHtml(String html) {
@@ -279,7 +323,8 @@ class DownloadManager {
             // 检查内容是否有效
             if (content.startsWith('提取失败') || 
                 content.startsWith('URL格式错误') ||
-                content.startsWith('未找到')) {
+                content.startsWith('未找到') ||
+                content == '該章節是付費章節，不提供下載') { // 新增付费提示判断
               throw Exception(content);
             }
 
