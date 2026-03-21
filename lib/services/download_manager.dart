@@ -662,4 +662,29 @@ class DownloadManager extends ChangeNotifier {
 
     print('章节已保存：$filePath');
   }
+
+/// 根据小说标题查找对应的下载任务
+/// 
+/// [novelTitle] 要查找的小说标题
+/// 
+/// 返回值：如果找到匹配的任务，返回true；否则返回false
+bool hasTaskByNovelTitle(String novelTitle) {
+  // 遍历任务队列查找匹配的标题
+  for (var task in tasks) {
+    // 使用trim()去除首尾空格，equalsIgnoreCase忽略大小写（可选，根据需求调整）
+    if (task.novelTitle.trim() == novelTitle.trim()) {
+      return true;
+    }
+  }
+  
+  // 同时检查已完成任务列表（如果需要）
+  for (var task in finishedTasks) {
+    if (task.novelTitle.trim() == novelTitle.trim()) {
+      return true;
+    }
+  }
+  
+  return false;
+}
+
 }

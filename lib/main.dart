@@ -5,6 +5,8 @@ import 'package:flutter/material.dart';
 import 'package:window_manager/window_manager.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'package:m3e_design/m3e_design.dart';
+
 import 'services/download_manager.dart';
 import 'testing.dart';
 import 'main_download_screen.dart';
@@ -84,11 +86,13 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'UnU Novel Toolbox',
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF2196F3)),
-        // 优化涟漪效果的颜色
-        splashFactory: InkRipple.splashFactory,
-        splashColor: Colors.white12,
+      theme: withM3ETheme(
+        ThemeData(
+          colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF2196F3)),
+          // 优化涟漪效果的颜色
+          splashFactory: InkRipple.splashFactory,
+          splashColor: Colors.white12,
+        ),
       ),
       home: HomePage(),
     );

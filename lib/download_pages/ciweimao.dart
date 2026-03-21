@@ -936,7 +936,7 @@ class _cwm_NovelCatalogPageState extends State<cwm_NovelCatalogPage> {
             const Expanded(child: SizedBox()),
 
             FilledButton(
-              onPressed: _catalogData.isNotEmpty && _isTaskAdded == false
+              onPressed: _catalogData.isNotEmpty && _isTaskAdded == false && DownloadManager.instance.hasTaskByNovelTitle(_novelTitle) == false
                   ? () {
                       // final cwm_NovelExtractor extractor = cwm_NovelExtractor();
                       // bool isInitSuccess = await extractor.initialize();
@@ -962,7 +962,6 @@ class _cwm_NovelCatalogPageState extends State<cwm_NovelCatalogPage> {
                       //   print('工具类初始化失败，无法提取内容');
                       // }
 
-                      final String savePath = r'D:\\Flutter_Testing\\cwmxx\\u1';
                       DownloadManager.instance.addDownloadTask(
                         taskType: TaskType.ciweimao,
                         coverUrl: _novelCover,
@@ -970,7 +969,7 @@ class _cwm_NovelCatalogPageState extends State<cwm_NovelCatalogPage> {
                         novelTitle: _novelTitle,
                         volumes: _catalogData,
                         isEpub: _isEpub,
-                        savePath: savePath,
+                        savePath: "${UserPreferences.instance.currentSettingsMap["download_root_path"]}/$_novelTitle",
                       );
 
                       setState(() {
@@ -980,6 +979,8 @@ class _cwm_NovelCatalogPageState extends State<cwm_NovelCatalogPage> {
                   : null,
               child: _catalogData.isEmpty
                   ? const Text("等待開始")
+                  : DownloadManager.instance.hasTaskByNovelTitle(_novelTitle)
+                  ? const Text("已添加")
                   : _isTaskAdded
                   ? const Text("已添加")
                   : const Text("添加到下載列表"),
