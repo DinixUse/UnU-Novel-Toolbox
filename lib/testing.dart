@@ -254,21 +254,6 @@ class _DownloadProgressRingState extends State<DownloadProgressRing> {
   }
 }
 
-class MainDownloadScreen extends StatelessWidget {
-  const MainDownloadScreen({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('下載内容'),
-      ),
-    );
-  }
-}
-
-
-
 /// 測試下載頁面 結束
 
 class NovelExtractorPage extends StatefulWidget {

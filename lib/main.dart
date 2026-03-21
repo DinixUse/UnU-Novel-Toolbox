@@ -7,6 +7,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'services/download_manager.dart';
 import 'testing.dart';
+import 'main_download_screen.dart';
 import 'testing_2.dart';
 import 'downloader_page.dart';
 import 'preferences.dart';
