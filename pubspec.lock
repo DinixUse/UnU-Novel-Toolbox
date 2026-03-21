@@ -105,6 +105,14 @@ packages:
       url: "https://pub.flutter-io.cn"
     source: hosted
     version: "1.0.8"
+  dynamic_color:
+    dependency: transitive
+    description:
+      name: dynamic_color
+      sha256: "43a5a6679649a7731ab860334a5812f2067c2d9ce6452cf069c5e0c25336c17c"
+      url: "https://pub.flutter-io.cn"
+    source: hosted
+    version: "1.8.1"
   encrypt:
     dependency: "direct main"
     description:
@@ -272,6 +280,14 @@ packages:
       url: "https://pub.flutter-io.cn"
     source: hosted
     version: "1.3.0"
+  m3e_design:
+    dependency: "direct main"
+    description:
+      name: m3e_design
+      sha256: cfb82b11890beeb03963e3701ba2eb891d027cd70b4a70df05629d1d1c47986b
+      url: "https://pub.flutter-io.cn"
+    source: hosted
+    version: "0.1.0"
   matcher:
     dependency: transitive
     description:
@@ -376,6 +392,14 @@ packages:
       url: "https://pub.flutter-io.cn"
     source: hosted
     version: "3.9.1"
+  progress_indicator_m3e:
+    dependency: "direct main"
+    description:
+      name: progress_indicator_m3e
+      sha256: "9180d42f2b6062dd422e1c7348f5e7ebc6066597a6932d13779fc27c58358e0c"
+      url: "https://pub.flutter-io.cn"
+    source: hosted
+    version: "0.1.0"
   screen_retriever:
     dependency: transitive
     description:

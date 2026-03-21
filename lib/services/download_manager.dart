@@ -259,6 +259,8 @@ class DownloadManager extends ChangeNotifier {
   List<TaskModel> tasks = [];
   // 当前正在处理的任务（确保唯一）
   TaskModel? _currentProcessingTask;
+
+  List<TaskModel> finishedTasks = [];
   
   static final DownloadManager instance = DownloadManager._internal();
   DownloadManager._internal();
@@ -383,6 +385,8 @@ class DownloadManager extends ChangeNotifier {
           'completed': nextTask.totalChapterCount,
         });
         print("任务完成：${nextTask.novelTitle}");
+        //tasks.remove(nextTask);
+        finishedTasks.add(nextTask);
       } catch (e) {
         // 5. 任务失败/取消：更新状态
         print("任务失败/取消：$e");
