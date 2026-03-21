@@ -312,6 +312,14 @@ packages:
       url: "https://pub.flutter-io.cn"
     source: hosted
     version: "1.0.0"
+  material_shapes:
+    dependency: "direct main"
+    description:
+      name: material_shapes
+      sha256: "20f20eb56ef4cd9c957f91f7cf4986aad910a65ed1f9a3bc33b13a19cc3fd885"
+      url: "https://pub.flutter-io.cn"
+    source: hosted
+    version: "0.0.2"
   meta:
     dependency: transitive
     description:

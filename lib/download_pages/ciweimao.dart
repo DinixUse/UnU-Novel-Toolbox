@@ -14,13 +14,13 @@ import '../services/download_manager.dart';
 
 import '../services/cwm_tracker_core/book_fetcher.dart';
 
-class cwm_NovelCatalogPage extends StatefulWidget {
-  const cwm_NovelCatalogPage({super.key});
+class NovelCatalogPage extends StatefulWidget {
+  const NovelCatalogPage({super.key});
   @override
-  State<cwm_NovelCatalogPage> createState() => _cwm_NovelCatalogPageState();
+  State<NovelCatalogPage> createState() => _NovelCatalogPageState();
 }
 
-class _cwm_NovelCatalogPageState extends State<cwm_NovelCatalogPage> {
+class _NovelCatalogPageState extends State<NovelCatalogPage> {
   final TextEditingController _urlController = TextEditingController(text: '');
   bool _isLoading = false;
   String _statusMessage = '';
@@ -28,13 +28,13 @@ class _cwm_NovelCatalogPageState extends State<cwm_NovelCatalogPage> {
   String _novelTitle = '';
   String _novelAuthor = '';
   String _novelCover = '';
-  List<cwm_NovelVolume> _catalogData = [];
+  List<NovelVolume> _catalogData = [];
 
   late final WebviewController _webviewController;
   bool _webViewInitialized = false;
   String _bookId = '100012892';
 
-  bool _isEpub = true;
+  bool _isEpub = false;
   bool _isTaskAdded = false;
 
   @override
@@ -167,8 +167,8 @@ class _cwm_NovelCatalogPageState extends State<cwm_NovelCatalogPage> {
   }
 
   /// 目录解析逻辑
-  List<cwm_NovelVolume> _parseCatalogFromHtml(String html) {
-    final List<cwm_NovelVolume> volumes = [];
+  List<NovelVolume> _parseCatalogFromHtml(String html) {
+    final List<NovelVolume> volumes = [];
     try {
       final document = parse(html);
 
@@ -249,7 +249,7 @@ class _cwm_NovelCatalogPageState extends State<cwm_NovelCatalogPage> {
           final chapterElements = section.querySelectorAll(
             'li a, .chapter-item a',
           );
-          List<cwm_NovelChapter> volChapters = [];
+          List<NovelChapter> volChapters = [];
 
           for (var chapter in chapterElements) {
             final title = chapter.text.trim();
@@ -258,13 +258,13 @@ class _cwm_NovelCatalogPageState extends State<cwm_NovelCatalogPage> {
               final fullUrl = url.startsWith('http')
                   ? url
                   : 'https://www.ciweimao.com$url';
-              volChapters.add(cwm_NovelChapter(title: title, url: fullUrl));
+              volChapters.add(NovelChapter(title: title, url: fullUrl));
             }
           }
 
           if (volChapters.isNotEmpty) {
             volumes.add(
-              cwm_NovelVolume(volumeName: volName, chapters: volChapters),
+              NovelVolume(volumeName: volName, chapters: volChapters),
             );
           }
         }
@@ -272,7 +272,7 @@ class _cwm_NovelCatalogPageState extends State<cwm_NovelCatalogPage> {
         // 方案B：没有明确分组，查找独立的卷名标题+后续章节
         final allElements = catalogBox.children;
         String currentVolName = '全部章节';
-        List<cwm_NovelChapter> currentChapters = [];
+        List<NovelChapter> currentChapters = [];
 
         for (var element in allElements) {
           // 判断是否是卷名标题
@@ -283,7 +283,7 @@ class _cwm_NovelCatalogPageState extends State<cwm_NovelCatalogPage> {
             // 如果已有章节，先保存当前卷
             if (currentChapters.isNotEmpty) {
               volumes.add(
-                cwm_NovelVolume(
+                NovelVolume(
                   volumeName: currentVolName,
                   chapters: currentChapters,
                 ),
@@ -306,7 +306,7 @@ class _cwm_NovelCatalogPageState extends State<cwm_NovelCatalogPage> {
                     ? url
                     : 'https://www.ciweimao.com$url';
                 currentChapters.add(
-                  cwm_NovelChapter(title: title, url: fullUrl),
+                  NovelChapter(title: title, url: fullUrl),
                 );
               }
             }
@@ -316,7 +316,7 @@ class _cwm_NovelCatalogPageState extends State<cwm_NovelCatalogPage> {
         // 添加最后一卷
         if (currentChapters.isNotEmpty) {
           volumes.add(
-            cwm_NovelVolume(
+            NovelVolume(
               volumeName: currentVolName,
               chapters: currentChapters,
             ),
@@ -329,7 +329,7 @@ class _cwm_NovelCatalogPageState extends State<cwm_NovelCatalogPage> {
         final chapterElements = catalogBox.querySelectorAll(
           'li a, .chapter-item a',
         );
-        List<cwm_NovelChapter> allChapters = [];
+        List<NovelChapter> allChapters = [];
 
         for (var chapter in chapterElements) {
           final title = chapter.text.trim();
@@ -338,13 +338,13 @@ class _cwm_NovelCatalogPageState extends State<cwm_NovelCatalogPage> {
             final fullUrl = url.startsWith('http')
                 ? url
                 : 'https://www.ciweimao.com$url';
-            allChapters.add(cwm_NovelChapter(title: title, url: fullUrl));
+            allChapters.add(NovelChapter(title: title, url: fullUrl));
           }
         }
 
         if (allChapters.isNotEmpty) {
           volumes.add(
-            cwm_NovelVolume(volumeName: '全部章節', chapters: allChapters),
+            NovelVolume(volumeName: '全部章節', chapters: allChapters),
           );
         } else {
           throw Exception('未找到章节链接，可能是反爬限制');
@@ -938,7 +938,7 @@ class _cwm_NovelCatalogPageState extends State<cwm_NovelCatalogPage> {
             FilledButton(
               onPressed: _catalogData.isNotEmpty && _isTaskAdded == false && DownloadManager.instance.hasTaskByNovelTitle(_novelTitle) == false
                   ? () {
-                      // final cwm_NovelExtractor extractor = cwm_NovelExtractor();
+                      // final NovelExtractor extractor = NovelExtractor();
                       // bool isInitSuccess = await extractor.initialize();
 
                       // if (isInitSuccess) {

@@ -42,6 +42,7 @@ dependencies:
   url_launcher: ^6.2.5  # URL校验辅助
   webview_windows: ^0.3.0
   material_new_shapes: ^1.0.0
+  material_shapes: ^0.0.2
   shared_preferences: ^2.2.2
   path: ^1.8.3
   encrypt: ^5.0.1

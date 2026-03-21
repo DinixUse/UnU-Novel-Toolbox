@@ -61,7 +61,7 @@ class _DownloaderPageState extends State<DownloaderPage>
           controller: _tabController,
           children: _tabTitles.map((title) {
             if (title == "刺蝟貓") {
-              return const cwm_NovelCatalogPage();
+              return const NovelCatalogPage();
             } else {
               return const Center(child: Text("施工中"));
             }

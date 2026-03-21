@@ -8,11 +8,14 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:m3e_design/m3e_design.dart';
 
 import 'services/download_manager.dart';
-import 'testing.dart';
 import 'main_download_screen.dart';
-import 'testing_2.dart';
 import 'downloader_page.dart';
 import 'preferences.dart';
+import 'welcome_page.dart';
+
+import 'testing.dart';
+import 'testing_2.dart';
+import 'testing_3.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -89,9 +92,6 @@ class MyApp extends StatelessWidget {
       theme: withM3ETheme(
         ThemeData(
           colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF2196F3)),
-          // 优化涟漪效果的颜色
-          splashFactory: InkRipple.splashFactory,
-          splashColor: Colors.white12,
         ),
       ),
       home: HomePage(),
@@ -122,7 +122,7 @@ class _HomePageState extends State<HomePage>
     const AppTab(
       title: "起始頁",
       icon: Icons.home,
-      page: Center(child: Text("起始頁内容", style: TextStyle(fontSize: 24))),
+      page: NovelConverterSplashScreen(),
     ),
     const AppTab(title: "下載器", icon: Icons.download, page: DownloaderPage()),
     const AppTab(
@@ -131,11 +131,11 @@ class _HomePageState extends State<HomePage>
       page: Center(child: Text("轉換工具頁内容", style: TextStyle(fontSize: 24))),
     ),
     const AppTab(title: "設定", icon: Icons.settings, page: SettingsPage()),
-    const AppTab(
-      title: "測試頁面",
-      icon: Icons.toc_outlined,
-      page: NovelExtractorPage(),
-    ),
+    // const AppTab(
+    //   title: "測試頁面",
+    //   icon: Icons.toc_outlined,
+    //   page: NovelExtractorPage(),
+    // ),
   ];
 
   int _selectedIndex = 0;
@@ -391,6 +391,22 @@ class SettingsPage extends StatefulWidget {
 }
 
 class _SettingsPageState extends State<SettingsPage> {
+  bool dynamicColorEnabled =
+      UserPreferences.instance.currentSettingsMap["dynamic_app_color"];
+  bool blurEnabled = UserPreferences.instance.currentSettingsMap["enable_blur"];
+  double imageOpacity =
+      UserPreferences.instance.currentSettingsMap["image_opacity"];
+  int uiAlpha = UserPreferences.instance.currentSettingsMap["ui_alpha"];
+
+  final thumbIcon = WidgetStateProperty.resolveWith<Icon?>((
+    Set<WidgetState> states,
+  ) {
+    if (states.contains(WidgetState.selected)) {
+      return const Icon(Icons.check);
+    }
+    return const Icon(Icons.close);
+  });
+
   @override
   Widget build(BuildContext context) {
     return BackdropFilter(
@@ -436,10 +452,150 @@ class _SettingsPageState extends State<SettingsPage> {
               ),
             ),
 
-            const SliverToBoxAdapter(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: const [Text("data")],
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const SettingsHeader(title: "外觀"),
+                    SettingsTile(
+                      position: TilePosition.first,
+                      tileIcon: const Icon(Icons.color_lens),
+                      title: "强調色",
+                      subtitle: const Text("選擇應用强調色"),
+                      tileColor: Theme.of(
+                        context,
+                      ).colorScheme.surfaceContainerLowest,
+                      trailing: CircleAvatar(
+                        backgroundColor: Color(
+                          UserPreferences
+                              .instance.currentSettingsMap["app_color"],
+                        ),
+                      ),
+                    ),
+                    SettingsTile(
+                      position: TilePosition.middle,
+                      tileIcon: const Icon(Icons.image),
+                      title: "背景圖片",
+                      subtitle:
+                          UserPreferences
+                                  .instance
+                                  .currentSettingsMap["scaffold_background_image_url"] ==
+                              ""
+                          ? null
+                          : Text(
+                              "${UserPreferences.instance.currentSettingsMap["scaffold_background_image_url"]}",
+                            ),
+                      tileColor: Theme.of(
+                        context,
+                      ).colorScheme.surfaceContainerLowest,
+                    ),
+                    if (UserPreferences
+                            .instance
+                            .currentSettingsMap["scaffold_background_image_url"] !=
+                        "") ...[
+                      SettingsTile(
+                        position: TilePosition.middle,
+                        tileIcon: const Icon(Icons.opacity),
+                        title: "圖片不透明度",
+                        subtitle: Slider(
+                          divisions: 10,
+                          label: imageOpacity.toString(),
+                          value: imageOpacity,
+                          onChanged: (value) {
+                            setState(() {
+                              imageOpacity = value;
+                            });
+                          },
+                        ),
+                        tileColor: Theme.of(
+                          context,
+                        ).colorScheme.surfaceContainerLow,
+                      ),
+                      SettingsTile(
+                        position: TilePosition.middle,
+                        tileIcon: const Icon(Icons.umbrella_outlined),
+                        title: "UI不透明度",
+                        subtitle: Slider(
+                          divisions: 255,
+                          label: uiAlpha.toString(),
+                          value: uiAlpha / 255.0,
+                          onChanged: (value) {
+                            setState(() {
+                              uiAlpha = (value * 255).toInt();
+                            });
+                          },
+                        ),
+                        tileColor: Theme.of(
+                          context,
+                        ).colorScheme.surfaceContainerLow,
+                      ),
+                    ],
+                    SettingsTile(
+                      position: TilePosition.middle,
+                      tileIcon: const Icon(Icons.blur_circular),
+                      title: "模糊效果",
+                      tileColor: Theme.of(
+                        context,
+                      ).colorScheme.surfaceContainerLowest,
+                      onTap: () => setState(() {
+                        blurEnabled = !blurEnabled;
+                      }),
+                      trailing: Switch(
+                        thumbIcon: thumbIcon,
+                        value: blurEnabled,
+                        onChanged: (val) {
+                          setState(() {
+                            blurEnabled = val;
+                          });
+                        },
+                      ),
+                    ),
+                    SettingsTile(
+                      position: TilePosition.last,
+                      tileIcon: const Icon(Icons.auto_awesome),
+                      title: "動態取色",
+                      tileColor: Theme.of(
+                        context,
+                      ).colorScheme.surfaceContainerLowest,
+                      onTap: () => setState(() {
+                        dynamicColorEnabled = !dynamicColorEnabled;
+                      }),
+                      trailing: Switch(
+                        thumbIcon: thumbIcon,
+                        value: dynamicColorEnabled,
+                        onChanged: (val) {
+                          setState(() {
+                            dynamicColorEnabled = val;
+                          });
+                        },
+                      ),
+                    ),
+
+                    const SizedBox(height: 24),
+                    const SettingsHeader(title: "下載"),
+                    SettingsTile(
+                      position: TilePosition.single,
+                      tileIcon: const Icon(Icons.folder_open),
+                      title: "下載路徑",
+                      subtitle:
+                          UserPreferences
+                                  .instance
+                                  .currentSettingsMap["download_root_path"] !=
+                              ""
+                          ? Text(
+                              UserPreferences
+                                  .instance
+                                  .currentSettingsMap["download_root_path"],
+                            )
+                          : null,
+                      tileColor: Theme.of(
+                        context,
+                      ).colorScheme.surfaceContainerLowest,
+                    ),
+                  ],
+                ),
               ),
             ),
 
@@ -459,3 +615,131 @@ class _SettingsPageState extends State<SettingsPage> {
     );
   }
 }
+
+enum TilePosition { first, middle, last, single }
+
+class SettingsHeader extends StatelessWidget {
+  final String title;
+  final Color? textColor;
+  const SettingsHeader({super.key, required this.title, this.textColor});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+      child: Row(
+        children: [
+          Text(
+            title,
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+              fontSize: 14,
+              fontWeight: FontWeight.bold,
+              color: textColor ?? Theme.of(context).colorScheme.secondary,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class SettingsTile extends StatelessWidget {
+  final TilePosition position;
+  final Icon tileIcon;
+  final String title;
+  final Widget? subtitle;
+  final VoidCallback? onTap;
+  final Color? tileColor;
+  final Widget? trailing;
+  const SettingsTile({
+    super.key,
+    required this.position,
+    required this.tileIcon,
+    required this.title,
+    this.subtitle,
+    this.onTap,
+    this.tileColor,
+    this.trailing,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: switch (position) {
+        TilePosition.first => const EdgeInsets.only(bottom: 1),
+        TilePosition.last => const EdgeInsets.only(top: 1),
+        TilePosition.middle => const EdgeInsets.only(top: 1, bottom: 1),
+        TilePosition.single => const EdgeInsets.only(top: 1, bottom: 1),
+      },
+      child: ListTile(
+        subtitleTextStyle: Theme.of(context).textTheme.bodyMedium?.copyWith(
+          color: Theme.of(context).colorScheme.inverseSurface.withAlpha(192),
+        ),
+        shape: RoundedRectangleBorder(
+          borderRadius: switch (position) {
+            TilePosition.first => const BorderRadius.only(
+              topLeft: Radius.circular(24),
+              topRight: Radius.circular(24),
+              bottomLeft: Radius.circular(4),
+              bottomRight: Radius.circular(4),
+            ),
+            TilePosition.middle => const BorderRadius.all(Radius.circular(4)),
+            TilePosition.last => const BorderRadius.only(
+              topLeft: Radius.circular(4),
+              topRight: Radius.circular(4),
+              bottomLeft: Radius.circular(24),
+              bottomRight: Radius.circular(24),
+            ),
+            TilePosition.single => BorderRadius.circular(24),
+          },
+        ),
+        tileColor: tileColor == null
+            ? Colors.transparent
+            : tileColor!.withAlpha(
+                UserPreferences
+                            .instance
+                            .currentSettingsMap["scaffold_background_image_url"] ==
+                        ""
+                    ? 255
+                    : UserPreferences.instance.currentSettingsMap["ui_alpha"],
+              ),
+        leading: tileIcon,
+        title: Text(title),
+        subtitle: subtitle,
+        trailing: trailing,
+        onTap: onTap ?? () {},
+      ),
+    );
+  }
+}
+
+/* 
+ListTile(
+      shape: RoundedRectangleBorder(
+        borderRadius: switch (position) {
+          TilePosition.first => const BorderRadius.only(
+            topLeft: Radius.circular(24),
+            topRight: Radius.circular(24),
+            bottomLeft: Radius.circular(4),
+            bottomRight: Radius.circular(4),
+          ),
+          TilePosition.middle => const BorderRadius.all(Radius.circular(4)),
+          TilePosition.last => const BorderRadius.only(
+            topLeft: Radius.circular(4),
+            topRight: Radius.circular(4),
+            bottomLeft: Radius.circular(24),
+            bottomRight: Radius.circular(24),
+          ),
+          TilePosition.single => BorderRadius.circular(24),
+        },
+      ),
+      tileColor: tileColor ?? Colors.transparent,
+      leading: tileIcon,
+      title: Text(title),
+      subtitle: Text(subtitle),
+      trailing: const Icon(Icons.arrow_forward_ios),
+      onTap: onTap ?? () {
+        
+      },
+    )
+*/

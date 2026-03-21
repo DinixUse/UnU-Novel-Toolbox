@@ -187,16 +187,16 @@ enum DownloadTaskStatus {
   paused,
   completed,
   failed,
-  cancelled,  // 新增：取消状态
+  cancelled, // 新增：取消状态
 }
 
-class cwm_NovelChapter {
+class NovelChapter {
   final String title;
   final String url;
   double progress;
   DownloadTaskStatus status;
 
-  cwm_NovelChapter({
+  NovelChapter({
     required this.title,
     required this.url,
     this.progress = 0.0,
@@ -204,11 +204,11 @@ class cwm_NovelChapter {
   });
 }
 
-class cwm_NovelVolume {
+class NovelVolume {
   final String volumeName;
-  final List<cwm_NovelChapter> chapters;
+  final List<NovelChapter> chapters;
 
-  cwm_NovelVolume({required this.volumeName, required this.chapters});
+  NovelVolume({required this.volumeName, required this.chapters});
 }
 
 class TaskModel {
@@ -216,13 +216,13 @@ class TaskModel {
   final String coverUrl;
   final String novelAuthor;
   final String novelTitle;
-  final List<cwm_NovelVolume> volumes;
+  final List<NovelVolume> volumes;
   final bool isEpub;
   final String savePath;
-  
+
   // 关键：添加ValueNotifier管理进度
   final ValueNotifier<double> progressNotifier;
-  
+
   // 便捷访问：通过progress直接获取进度值
   double get progress => progressNotifier.value;
 
@@ -240,10 +240,11 @@ class TaskModel {
     RegExp(r'\s+'),
     '_',
   );
-  
+
   // 计算总章节数
-  int get totalChapterCount => volumes.fold(0, (sum, vol) => sum + vol.chapters.length);
-  
+  int get totalChapterCount =>
+      volumes.fold(0, (sum, vol) => sum + vol.chapters.length);
+
   // 释放资源（避免内存泄漏）
   void dispose() {
     progressNotifier.dispose();
@@ -261,7 +262,7 @@ class DownloadManager extends ChangeNotifier {
   TaskModel? _currentProcessingTask;
 
   List<TaskModel> finishedTasks = [];
-  
+
   static final DownloadManager instance = DownloadManager._internal();
   DownloadManager._internal();
 
@@ -317,17 +318,18 @@ class DownloadManager extends ChangeNotifier {
 
     while (retryCount < maxRetryCount) {
       // 检查：守护进程是否运行/任务是否被取消
-      if (!_daemonRunning || 
-          (_currentProcessingTask != null && 
-           getTaskProgressById(_currentProcessingTask!.taskId)!['status'] == DownloadTaskStatus.cancelled.name)) {
+      if (!_daemonRunning ||
+          (_currentProcessingTask != null &&
+              getTaskProgressById(_currentProcessingTask!.taskId)!['status'] ==
+                  DownloadTaskStatus.cancelled.name)) {
         throw Exception("任务已被取消");
       }
-      
+
       // 尝试提取内容
       content = await extractor.getNovelContent(url);
 
       // 检查是否提取成功
-      if (!content.contains("提取失败") && !content.contains("該章節是付費章節")) {
+      if (!content.contains("提取失败")) {
         return content;
       }
 
@@ -357,7 +359,9 @@ class DownloadManager extends ChangeNotifier {
       TaskModel? nextTask;
       try {
         nextTask = tasks.firstWhere(
-          (task) => getTaskProgressById(task.taskId)!['status'] == DownloadTaskStatus.pending.name,
+          (task) =>
+              getTaskProgressById(task.taskId)!['status'] ==
+              DownloadTaskStatus.pending.name,
         );
       } catch (e) {
         // 无等待任务，退出循环
@@ -376,7 +380,7 @@ class DownloadManager extends ChangeNotifier {
       try {
         // 3. 执行任务下载逻辑
         await _executeTask(nextTask);
-        
+
         // 4. 任务完成：标记为已完成
         nextTask.progressNotifier.value = 1.0;
         _updateTaskProgress(nextTask, {
@@ -407,10 +411,104 @@ class DownloadManager extends ChangeNotifier {
         // 6. 清空当前处理任务
         _currentProcessingTask = null;
         _taskChangedController.sink.add(null);
-        
+
         // 短暂延迟，避免CPU空转
         await Future.delayed(const Duration(milliseconds: 100));
       }
+    }
+  }
+
+  /// 合并多个TXT文件到一个文件中
+  /// 
+  /// [chapterTasks] - 章节任务列表，包含标题、文件路径、卷名
+  /// 
+  /// [outputPath] - 输出文件的绝对路径 (例如: "C:\\output.txt")
+  /// 
+  /// 返回值: 成功返回true，失败返回false
+  Future<bool> mergeTxtFiles({
+    required List<Map<String, String>> chapterTasks,
+    required String outputPath,
+  }) async {
+    try {
+      // 1. 按卷名分组章节
+      final Map<String, List<Map<String, String>>> volChapters = {};
+
+      for (var chapter in chapterTasks) {
+        final vol = chapter['vol'] ?? '默认卷';
+        final title = chapter['title'] ?? '未知章节';
+        final savepath = chapter['savepath'] ?? '';
+
+        // 过滤掉路径为空的无效章节
+        if (savepath.isEmpty) continue;
+
+        if (!volChapters.containsKey(vol)) {
+          volChapters[vol] = [];
+        }
+        volChapters[vol]!.add({
+          'title': title,
+          'savepath': savepath,
+          'vol': vol,
+        });
+      }
+
+      // 2. 创建输出文件并写入内容
+      final outputFile = File(outputPath);
+      // 如果文件已存在，先清空
+      if (await outputFile.exists()) {
+        await outputFile.writeAsString('', mode: FileMode.write);
+      }
+
+      // 3. 遍历每个卷，写入卷标题和章节内容
+      for (var entry in volChapters.entries) {
+        final volName = entry.key;
+        final chapters = entry.value;
+
+        // 写入卷标题 (格式: ## 卷名 ##)
+        await outputFile.writeAsString(
+          '## $volName ##\n\n',
+          mode: FileMode.append,
+        );
+
+        // 遍历该卷下的所有章节
+        for (var chapter in chapters) {
+          final chapterTitle = chapter['title']!;
+          final chapterPath = chapter['savepath']!;
+
+          // 写入章节标题 (格式: *# 章名 #*)
+          await outputFile.writeAsString(
+            '*# $chapterTitle #*\n\n',
+            mode: FileMode.append,
+          );
+
+          // 读取并写入章节内容
+          final chapterFile = File(chapterPath);
+          if (await chapterFile.exists()) {
+            final content = await chapterFile.readAsString();
+            await outputFile.writeAsString(
+              '$content\n\n',
+              mode: FileMode.append,
+            );
+          } else {
+            // 章节文件不存在时写入提示信息
+            await outputFile.writeAsString(
+              '【章节文件不存在: $chapterPath】\n\n',
+              mode: FileMode.append,
+            );
+          }
+        }
+
+        // 卷之间添加分隔线
+        await outputFile.writeAsString(
+          '=' * 50 + '\n\n',
+          mode: FileMode.append,
+        );
+      }
+
+      print('TXT文件合并完成，输出路径: $outputPath');
+      return true;
+    } catch (e) {
+      print('合并TXT文件出错: $e');
+      return false;
     }
   }
 
@@ -430,6 +528,8 @@ class DownloadManager extends ChangeNotifier {
     for (final volume in task.volumes) {
       for (final chapter in volume.chapters) {
         chapterTasks.add({
+          "vol": volume.volumeName,
+          "title": chapter.title,
           "url": chapter.url,
           "savepath": path.join(
             novelRootPath,
@@ -444,58 +544,77 @@ class DownloadManager extends ChangeNotifier {
       throw Exception("任务无章节可下载");
     }
 
-    // 初始化提取器
-    final extractor = cwm_NovelExtractor();
-    await extractor.initialize();
-    final double progressStep = 1.0 / chapterTasks.length;
+    /// 如果是刺蝟貓
+    if (task.taskType == TaskType.ciweimao) {
+      // 初始化提取器
+      final extractor = cwm_NovelExtractor();
+      await extractor.initialize();
+      final double progressStep = 1.0 / chapterTasks.length;
 
-    try {
-      // 逐个下载章节
-      for (int i = 0; i < chapterTasks.length; i++) {
-        // 检查：任务是否被取消（取消则终止）
-        if (getTaskProgressById(task.taskId)!['status'] == DownloadTaskStatus.cancelled.name) {
-          throw Exception("任务已被取消");
-        }
+      try {
+        // 逐个下载章节
+        for (int i = 0; i < chapterTasks.length; i++) {
+          // 检查：任务是否被取消（取消则终止）
+          if (getTaskProgressById(task.taskId)!['status'] ==
+              DownloadTaskStatus.cancelled.name) {
+            throw Exception("任务已被取消");
+          }
 
-        final chapter = chapterTasks[i];
-        String content = await extractNovelWithRetry(
-          extractor,
-          chapter["url"]!,
-          chapter["savepath"]!,
-          i,
-        );
+          final chapter = chapterTasks[i];
+          String content = await extractNovelWithRetry(
+            extractor,
+            chapter["url"]!,
+            chapter["savepath"]!,
+            i,
+          );
 
-        // 跳过付费章节（仍计算进度）
-        if (content.contains("該章節是付費章節")) {
-          print("跳过付费章节：${chapter["savepath"]}");
+          // 跳过付费章节（仍计算进度）
+          if (content.contains("該章節是付費章節")) {
+            print("跳过付费章节：${chapter["savepath"]}");
+            task.progressNotifier.value += progressStep;
+            _updateTaskProgress(task, {
+              'completed': i + 1,
+              'progress': task.progress,
+              'currentChapter': chapter["savepath"]!.split(path.separator).last,
+            });
+            continue;
+          }
+
+          // 保存章节内容
+          final saveFile = File(chapter["savepath"]!);
+          await Directory(saveFile.parent.path).create(recursive: true);
+          await saveFile.writeAsString(content);
+
+          // 更新进度
           task.progressNotifier.value += progressStep;
           _updateTaskProgress(task, {
             'completed': i + 1,
             'progress': task.progress,
             'currentChapter': chapter["savepath"]!.split(path.separator).last,
           });
-          continue;
+
+          stdout.writeln(
+            "已下载章节 ${i + 1}/${chapterTasks.length}：${chapter["savepath"]}",
+          );
+          stdout.flush();
         }
-
-        // 保存章节内容
-        final saveFile = File(chapter["savepath"]!);
-        await Directory(saveFile.parent.path).create(recursive: true);
-        await saveFile.writeAsString(content);
-
-        // 更新进度
-        task.progressNotifier.value += progressStep;
-        _updateTaskProgress(task, {
-          'completed': i + 1,
-          'progress': task.progress,
-          'currentChapter': chapter["savepath"]!.split(path.separator).last,
-        });
-
-        stdout.writeln("已下载章节 ${i+1}/${chapterTasks.length}：${chapter["savepath"]}");
-        stdout.flush();
+      } finally {
+        extractor.dispose();
       }
-    } finally {
-      extractor.dispose();
+
+      if (task.isEpub) {
+        // TODO: EPUB生成逻辑
+      } else {
+        String outputPath = path.join(
+          novelRootPath,
+          "${removeWindowsInvalidPathChars(task.novelTitle).trim()}.txt",
+        );
+        bool _result = await mergeTxtFiles(chapterTasks: chapterTasks, outputPath: outputPath);
+        print(_result);
+      }
     }
+
+    /// 刺蝟貓結束
   }
 
   // 添加任务到等待队列（核心：仅添加，不中断当前任务）
@@ -504,7 +623,7 @@ class DownloadManager extends ChangeNotifier {
     required String coverUrl,
     required String novelAuthor,
     required String novelTitle,
-    required List<cwm_NovelVolume> volumes,
+    required List<NovelVolume> volumes,
     required bool isEpub,
     required String savePath,
   }) {
@@ -520,14 +639,16 @@ class DownloadManager extends ChangeNotifier {
     );
 
     // 2. 更新保存路径
-    if(novelsSavePath != UserPreferences.instance.currentSettingsMap["download_root_path"]) {
-      novelsSavePath = UserPreferences.instance.currentSettingsMap["download_root_path"];
+    if (novelsSavePath !=
+        UserPreferences.instance.currentSettingsMap["download_root_path"]) {
+      novelsSavePath =
+          UserPreferences.instance.currentSettingsMap["download_root_path"];
     }
 
     // 3. 添加到任务队列（仅加入，不处理）
     tasks.add(newTask);
     _initTaskProgress(newTask);
-    
+
     // 4. 通知UI刷新
     _taskChangedController.sink.add(null);
 
@@ -584,7 +705,9 @@ class DownloadManager extends ChangeNotifier {
       _taskChangedController.sink.add(null);
 
       // 7. 如果有等待任务，触发下一个任务调度
-      if (_daemonRunning && _currentProcessingTask == null && tasks.isNotEmpty) {
+      if (_daemonRunning &&
+          _currentProcessingTask == null &&
+          tasks.isNotEmpty) {
         _scheduleNextTask();
       }
 
@@ -663,28 +786,27 @@ class DownloadManager extends ChangeNotifier {
     print('章节已保存：$filePath');
   }
 
-/// 根据小说标题查找对应的下载任务
-/// 
-/// [novelTitle] 要查找的小说标题
-/// 
-/// 返回值：如果找到匹配的任务，返回true；否则返回false
-bool hasTaskByNovelTitle(String novelTitle) {
-  // 遍历任务队列查找匹配的标题
-  for (var task in tasks) {
-    // 使用trim()去除首尾空格，equalsIgnoreCase忽略大小写（可选，根据需求调整）
-    if (task.novelTitle.trim() == novelTitle.trim()) {
-      return true;
+  /// 根据小说标题查找对应的下载任务
+  ///
+  /// [novelTitle] 要查找的小说标题
+  ///
+  /// 返回值：如果找到匹配的任务，返回true；否则返回false
+  bool hasTaskByNovelTitle(String novelTitle) {
+    // 遍历任务队列查找匹配的标题
+    for (var task in tasks) {
+      // 使用trim()去除首尾空格，equalsIgnoreCase忽略大小写（可选，根据需求调整）
+      if (task.novelTitle.trim() == novelTitle.trim()) {
+        return true;
+      }
     }
-  }
-  
-  // 同时检查已完成任务列表（如果需要）
-  for (var task in finishedTasks) {
-    if (task.novelTitle.trim() == novelTitle.trim()) {
-      return true;
-    }
-  }
-  
-  return false;
-}
 
+    // 同时检查已完成任务列表（如果需要）
+    for (var task in finishedTasks) {
+      if (task.novelTitle.trim() == novelTitle.trim()) {
+        return true;
+      }
+    }
+
+    return false;
+  }
 }

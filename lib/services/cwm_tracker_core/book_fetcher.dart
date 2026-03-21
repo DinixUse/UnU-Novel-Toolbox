@@ -40,14 +40,14 @@ class BookFetcher {
     }
 
     // 构建目录数据
-    List<cwm_NovelVolume> volumes = [];
+    List<NovelVolume> volumes = [];
     String currentVolumeName = '';
-    List<cwm_NovelChapter> currentChapters = [];
+    List<NovelChapter> currentChapters = [];
     for (var chapter in book.chapters) {
       if (chapter.isVolIntro) {
         if (currentChapters.isNotEmpty) {
           volumes.add(
-            cwm_NovelVolume(
+            NovelVolume(
               volumeName: currentVolumeName,
               chapters: currentChapters,
             ),
@@ -57,7 +57,7 @@ class BookFetcher {
         currentVolumeName = chapter.title ?? '';
       } else {
         currentChapters.add(
-          cwm_NovelChapter(
+          NovelChapter(
             title: chapter.title ?? '',
             url: chapter.url ?? '',
           ),
@@ -66,7 +66,7 @@ class BookFetcher {
     }
     if (currentChapters.isNotEmpty) {
       volumes.add(
-        cwm_NovelVolume(
+        NovelVolume(
           volumeName: currentVolumeName,
           chapters: currentChapters,
         ),

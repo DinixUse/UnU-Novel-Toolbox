@@ -70,14 +70,14 @@ class _HomePageState extends State<HomePage> {
     }
 
     // Build catalogData
-    List<cwm_NovelVolume> volumes = [];
+    List<NovelVolume> volumes = [];
     String currentVolumeName = '';
-    List<cwm_NovelChapter> currentChapters = [];
+    List<NovelChapter> currentChapters = [];
     for (var chapter in book.chapters) {
       if (chapter.isVolIntro) {
         if (currentChapters.isNotEmpty) {
           volumes.add(
-            cwm_NovelVolume(
+            NovelVolume(
               volumeName: currentVolumeName,
               chapters: currentChapters,
             ),
@@ -87,7 +87,7 @@ class _HomePageState extends State<HomePage> {
         currentVolumeName = chapter.title ?? '';
       } else {
         currentChapters.add(
-          cwm_NovelChapter(
+          NovelChapter(
             title: chapter.title ?? '',
             url: chapter.url ?? '',
           ),
@@ -96,7 +96,7 @@ class _HomePageState extends State<HomePage> {
     }
     if (currentChapters.isNotEmpty) {
       volumes.add(
-        cwm_NovelVolume(
+        NovelVolume(
           volumeName: currentVolumeName,
           chapters: currentChapters,
         ),
@@ -227,14 +227,14 @@ class _HomePageState extends State<HomePage> {
               Text('标题：${_bookData!['novelTitle']}'),
               Text('作者：${_bookData!['novelAuthor']}'),
               Text(
-                '章节：${(_bookData!['catalogData'] as List<cwm_NovelVolume>).fold(0, (sum, vol) => sum + vol.chapters.length)}',
+                '章节：${(_bookData!['catalogData'] as List<NovelVolume>).fold(0, (sum, vol) => sum + vol.chapters.length)}',
               ),
               const SizedBox(height: 8),
               Expanded(
                 child: Builder(
                   builder: (context) {
-                    List<cwm_NovelVolume> catalogData =
-                        _bookData!['catalogData'] as List<cwm_NovelVolume>;
+                    List<NovelVolume> catalogData =
+                        _bookData!['catalogData'] as List<NovelVolume>;
                     List<Widget> widgets = [];
                     for (var vol in catalogData) {
                       widgets.add(
