@@ -119,11 +119,7 @@ class _HomePageState extends State<HomePage>
     with SingleTickerProviderStateMixin {
   // Tab 配置列表
   final List<AppTab> _tabs = [
-    const AppTab(
-      title: "起始頁",
-      icon: Icons.home,
-      page: NovelConverterSplashScreen(),
-    ),
+    const AppTab(title: "起始頁", icon: Icons.home, page: WelcomePage()),
     const AppTab(title: "下載器", icon: Icons.download, page: DownloaderPage()),
     const AppTab(
       title: "轉換工具",
@@ -257,20 +253,30 @@ class _HomePageState extends State<HomePage>
                   onPanStart: (_) => windowManager.startDragging(),
                 ),
                 actions: [
-                  IconButton.filledTonal(
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => const MainDownloadScreen(),
+                  ValueListenableBuilder<int>(
+                    valueListenable: DownloadManager.instance.pendingTaskCount,
+                    builder: (context, count, child) {
+                      // 只在 count > 0 時顯示數字
+                      return Badge.count(
+                        count: count > 0 ? count : 0,
+                        isLabelVisible: count > 0, // 數量為0時隱藏標籤
+                        child: IconButton.filledTonal(
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => const MainDownloadScreen(),
+                              ),
+                            );
+                          },
+                          icon: const Icon(Icons.download_outlined),
+                          style: IconButton.styleFrom(
+                            backgroundColor: scheme.tertiaryContainer,
+                            foregroundColor: scheme.onTertiaryContainer,
+                          ),
                         ),
                       );
                     },
-                    icon: const Icon(Icons.download_outlined),
-                    style: IconButton.styleFrom(
-                      backgroundColor: scheme.tertiaryContainer,
-                      foregroundColor: scheme.onTertiaryContainer,
-                    ),
                   ),
                   const SizedBox(width: 4),
                   IconButton.filledTonal(
@@ -283,6 +289,10 @@ class _HomePageState extends State<HomePage>
                         ? windowManager.unmaximize()
                         : windowManager.maximize(),
                     icon: const Icon(Icons.crop_square_outlined),
+                    style: IconButton.styleFrom(
+                      backgroundColor: scheme.primaryContainer,
+                      foregroundColor: scheme.onPrimaryContainer,
+                    ),
                   ),
                   const SizedBox(width: 4),
                   IconButton.filled(
@@ -470,7 +480,8 @@ class _SettingsPageState extends State<SettingsPage> {
                       trailing: CircleAvatar(
                         backgroundColor: Color(
                           UserPreferences
-                              .instance.currentSettingsMap["app_color"],
+                              .instance
+                              .currentSettingsMap["app_color"],
                         ),
                       ),
                     ),

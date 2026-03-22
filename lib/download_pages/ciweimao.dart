@@ -386,7 +386,7 @@ class _NovelCatalogPageState extends State<NovelCatalogPage> {
 
     try {
       // 1. 加载页面（等待更长时间）
-      setState(() => _statusMessage = 'Loading Novel Page...');
+      setState(() => _statusMessage = '請求接口...');
       await _webviewController.loadUrl(url);
 
       // 等待页面完全加载（最长15秒）
@@ -515,7 +515,7 @@ class _NovelCatalogPageState extends State<NovelCatalogPage> {
                     controller: _urlController,
                     decoration: InputDecoration(
                       labelText: '請填入URL',
-                      hintText: 'https://www.ciweimao.com/book/数字',
+                      hintText: 'https://www.ciweimao.com/book/數字',
                       border: const OutlineInputBorder(
                         borderRadius: BorderRadius.all(Radius.circular(128)),
                       ),

@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:unu_novel_toolbox/preferences.dart';
+import 'package:window_manager/window_manager.dart';
 import 'services/download_manager.dart';
 import 'package:progress_indicator_m3e/progress_indicator_m3e.dart';
 
@@ -16,7 +17,12 @@ class _MainDownloadScreenState extends State<MainDownloadScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("下載項目")),
+      appBar: AppBar(
+        title: const Text("下載項目"),
+        flexibleSpace: GestureDetector(
+          onPanStart: (_) => windowManager.startDragging(),
+        ),
+      ),
       body: Padding(
         padding: const EdgeInsets.all(16),
         child: ListView.builder(
@@ -102,7 +108,9 @@ class _MainDownloadScreenState extends State<MainDownloadScreen> {
                                         .toUpperCase(),
                                     style: TextStyle(
                                       fontSize: 12,
-                                      color: Theme.of(context).colorScheme.primary,
+                                      color: Theme.of(
+                                        context,
+                                      ).colorScheme.primary,
                                     ),
                                   ),
                                 ],

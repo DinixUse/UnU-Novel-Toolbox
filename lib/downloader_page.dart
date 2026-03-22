@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:unu_novel_toolbox/preferences.dart';
 
 import 'download_pages/ciweimao.dart';
+import 'download_pages/jjwxc.dart';
 import 'preferences.dart';
 
 class DownloaderPage extends StatefulWidget {
@@ -60,10 +61,13 @@ class _DownloaderPageState extends State<DownloaderPage>
         body: TabBarView(
           controller: _tabController,
           children: _tabTitles.map((title) {
-            if (title == "刺蝟貓") {
-              return const NovelCatalogPage();
-            } else {
-              return const Center(child: Text("施工中"));
+            switch (title) {
+              case '刺蝟貓':
+                return const NovelCatalogPage();
+              case '晉江文學城':
+                return const JjwxcDownloadPage();
+              default:
+                return Center(child: Text('未知的下载源：$title'));
             }
           }).toList(),
         ),

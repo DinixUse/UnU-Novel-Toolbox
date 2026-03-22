@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:async';
 import 'dart:io';
+import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:html/parser.dart' show parse;
@@ -263,6 +264,8 @@ class DownloadManager extends ChangeNotifier {
 
   List<TaskModel> finishedTasks = [];
 
+  final ValueNotifier<int> pendingTaskCount = ValueNotifier(0);
+
   static final DownloadManager instance = DownloadManager._internal();
   DownloadManager._internal();
 
@@ -279,6 +282,11 @@ class DownloadManager extends ChangeNotifier {
   // 暴露给UI的Stream和状态
   Stream<void> get taskChangedStream => _taskChangedController.stream;
   bool get isDaemonRunning => _daemonRunning;
+
+  void _updatePendingTaskCount() {
+    final count = tasks.length - finishedTasks.length;
+    pendingTaskCount.value = count;
+  }
 
   // 启动下载守护进程（仅负责调度队列）
   void startDaemon() {
@@ -297,6 +305,7 @@ class DownloadManager extends ChangeNotifier {
       task.dispose();
     }
     tasks.clear();
+    pendingTaskCount.dispose();
     _taskProgress.clear();
   }
 
@@ -381,6 +390,8 @@ class DownloadManager extends ChangeNotifier {
         // 3. 执行任务下载逻辑
         await _executeTask(nextTask);
 
+        
+
         // 4. 任务完成：标记为已完成
         nextTask.progressNotifier.value = 1.0;
         _updateTaskProgress(nextTask, {
@@ -391,10 +402,12 @@ class DownloadManager extends ChangeNotifier {
         print("任务完成：${nextTask.novelTitle}");
         //tasks.remove(nextTask);
         finishedTasks.add(nextTask);
+
+        _updatePendingTaskCount();
       } catch (e) {
         // 5. 任务失败/取消：更新状态
         print("任务失败/取消：$e");
-        if (e.toString().contains("任务已被取消")) {
+        if (e.toString().contains("任务已被取消") || e.toString().contains("任务已取消")) {
           _updateTaskProgress(nextTask, {
             'status': DownloadTaskStatus.cancelled.name,
             'error': '任务已取消',
@@ -419,11 +432,11 @@ class DownloadManager extends ChangeNotifier {
   }
 
   /// 合并多个TXT文件到一个文件中
-  /// 
+  ///
   /// [chapterTasks] - 章节任务列表，包含标题、文件路径、卷名
-  /// 
+  ///
   /// [outputPath] - 输出文件的绝对路径 (例如: "C:\\output.txt")
-  /// 
+  ///
   /// 返回值: 成功返回true，失败返回false
   Future<bool> mergeTxtFiles({
     required List<Map<String, String>> chapterTasks,
@@ -523,6 +536,19 @@ class DownloadManager extends ChangeNotifier {
       await targetDir.create(recursive: true);
     }
 
+    // 獲取封面
+    Dio dio = Dio();
+    Response response = await dio.get(
+      task.coverUrl,
+      options: Options(
+        responseType: ResponseType.bytes,
+        followRedirects: true,
+      ),
+    );
+
+    File file = File(path.join(novelRootPath, 'Cover.png'));
+    await file.writeAsBytes(response.data);
+
     // 构建章节任务列表
     List<Map<String, String>> chapterTasks = [];
     for (final volume in task.volumes) {
@@ -533,6 +559,7 @@ class DownloadManager extends ChangeNotifier {
           "url": chapter.url,
           "savepath": path.join(
             novelRootPath,
+            "Source",
             removeWindowsInvalidPathChars(volume.volumeName).trim(),
             "${removeWindowsInvalidPathChars(chapter.title).trim()}.txt",
           ),
@@ -570,14 +597,17 @@ class DownloadManager extends ChangeNotifier {
 
           // 跳过付费章节（仍计算进度）
           if (content.contains("該章節是付費章節")) {
-            print("跳过付费章节：${chapter["savepath"]}");
-            task.progressNotifier.value += progressStep;
-            _updateTaskProgress(task, {
-              'completed': i + 1,
-              'progress': task.progress,
-              'currentChapter': chapter["savepath"]!.split(path.separator).last,
-            });
-            continue;
+            // print("跳过付费章节：${chapter["savepath"]}");
+            // task.progressNotifier.value += progressStep;
+            // _updateTaskProgress(task, {
+            //   'completed': i + 1,
+            //   'progress': task.progress,
+            //   'currentChapter': chapter["savepath"]!.split(path.separator).last,
+            // });
+            // continue;
+            chapterTasks = chapterTasks.sublist(0, i);
+
+            break;
           }
 
           // 保存章节内容
@@ -609,7 +639,10 @@ class DownloadManager extends ChangeNotifier {
           novelRootPath,
           "${removeWindowsInvalidPathChars(task.novelTitle).trim()}.txt",
         );
-        bool _result = await mergeTxtFiles(chapterTasks: chapterTasks, outputPath: outputPath);
+        bool _result = await mergeTxtFiles(
+          chapterTasks: chapterTasks,
+          outputPath: outputPath,
+        );
         print(_result);
       }
     }
@@ -648,6 +681,7 @@ class DownloadManager extends ChangeNotifier {
     // 3. 添加到任务队列（仅加入，不处理）
     tasks.add(newTask);
     _initTaskProgress(newTask);
+    _updatePendingTaskCount();
 
     // 4. 通知UI刷新
     _taskChangedController.sink.add(null);
