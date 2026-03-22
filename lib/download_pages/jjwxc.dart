@@ -1,55 +1,225 @@
+import 'dart:convert';
 import 'dart:async';
+import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:html/parser.dart' show parse;
+import 'package:html/dom.dart' as dom;
+import 'package:unu_novel_toolbox/preferences.dart';
 import 'package:unu_novel_toolbox/widgets/widgets.dart';
+import 'package:webview_windows/webview_windows.dart';
 
-class JjwxcDownloadPage extends StatefulWidget {
-  const JjwxcDownloadPage({super.key});
+import '../widgets/expressive_refresh.dart';
+import '../services/download_manager.dart';
+
+import '../services/cwm_tracker_core/book_fetcher.dart';
+
+class JjwxcNovelCatalogPage extends StatefulWidget {
+  const JjwxcNovelCatalogPage({super.key});
   @override
-  State<JjwxcDownloadPage> createState() => _JjwxcDownloadPageState();
+  State<JjwxcNovelCatalogPage> createState() => _JjwxcNovelCatalogPageState();
 }
 
-class _JjwxcDownloadPageState extends State<JjwxcDownloadPage> {
+class _JjwxcNovelCatalogPageState extends State<JjwxcNovelCatalogPage> {
   final TextEditingController _urlController = TextEditingController(text: '');
   bool _isLoading = false;
   String _statusMessage = '';
 
-  // 仅保留UI展示用的基础数据
   String _novelTitle = '';
   String _novelAuthor = '';
-  String _novelCover = 'https://e1.kuangxiangit.com/uploads/allimg/c230810/10-08-23130101-63904.jpg';
-  String _bookId = '100012892';
+  String _novelCover = '';
+  List<NovelVolume> _catalogData = [];
+
+  String _bookId = '9715036';
 
   bool _isEpub = false;
   bool _isTaskAdded = false;
-  bool _webViewInitialized = true; // 直接设为true，避免初始化逻辑
 
   @override
   void initState() {
     super.initState();
+
     _urlController.addListener(() {
-      // 移除URL解析逻辑，仅保留空方法
+      _parseBookIdFromUrl(_urlController.text);
     });
   }
 
-  // 空方法，仅用于UI点击响应
+  void _parseBookIdFromUrl(String url) {
+    final regex = RegExp(r'.*onebook\.php\?novelid=(\d+)');
+    final match = regex.firstMatch(url);
+    if (match != null && match.groupCount >= 1) {
+      setState(() {
+        _bookId = match.group(1)!;
+      });
+    }
+  }
+
+  /// 目录解析逻辑
+  List<NovelVolume> _parseCatalogFromHtml(String html) {
+    final List<NovelVolume> volumes = [];
+    try {
+      final document = parse(html);
+
+      // 1. 解析书名（适配晋江结构）
+      _novelTitle =
+          // 方式1：从h1标题获取（最准确）
+          document.querySelector('h1[itemprop="name"] span')?.text?.trim() ??
+          // 方式2：从title标签解析
+          document
+              .querySelector('title')
+              ?.text
+              ?.replaceAll('_晋江文学城_【衍生小说|言情小说】', '')
+              ?.replaceAll('《', '')
+              ?.replaceAll('》', '')
+              ?.trim() ??
+          // 方式3：meta标签
+          document
+              .querySelector('meta[name="Keywords"]')
+              ?.attributes['content']
+              ?.split('，')
+              ?.first
+              ?.replaceAll('《', '')
+              ?.replaceAll('》', '')
+              ?.trim() ??
+          '未知书名';
+
+      // 2. 解析作者（适配晋江结构）
+      _novelAuthor =
+          // 方式1：从作者链接获取
+          document
+              .querySelector('h2 a span[itemprop="author"]')
+              ?.text
+              ?.trim() ??
+          // 方式2：meta标签
+          document
+              .querySelector('meta[name="Author"]')
+              ?.attributes['content']
+              ?.trim() ??
+          // 方式3：Keywords meta解析
+          (document
+                      .querySelector('meta[name="Keywords"]')
+                      ?.attributes['content']
+                      ?.split('，')
+                      ?.elementAtOrNull(1) ??
+                  '')
+              .trim() ??
+          '未知作者';
+
+      // 3. 解析封面（适配晋江结构）
+      _novelCover =
+          document
+              .querySelector('img.noveldefaultimage')
+              ?.attributes['src']
+              ?.trim() ??
+          document
+              .querySelector('img[itemprop="image"]')
+              ?.attributes['src']
+              ?.trim() ??
+          "https://gd-hbimg.huaban.com/501f05df7cf3f7d94911329ad33e4365fbee4a3ef777-KBS5Su_fw658";
+
+      debugPrint('解析到书名：$_novelTitle');
+      debugPrint('解析到作者：$_novelAuthor');
+      debugPrint('解析到封面：$_novelCover');
+
+      // 4. 定位目录区域（晋江的章节列表在id为oneboolt的表格中）
+      dom.Element? catalogTable = document.getElementById('oneboolt');
+      if (catalogTable == null) {
+        throw Exception('未找到目录区域，请检查网站结构');
+      }
+
+      // 5. 解析章节列表（晋江没有分卷，所有章节在一个列表中）
+      final chapterRows = catalogTable.querySelectorAll(
+        'tr[itemprop="chapter"]',
+      );
+      List<NovelChapter> allChapters = [];
+
+      for (var row in chapterRows) {
+        // 获取章节标题链接
+        final chapterLink = row.querySelector(
+          'td:nth-child(2) a[itemprop="url"]',
+        );
+        if (chapterLink != null) {
+          final title = chapterLink.text.trim();
+          final url = chapterLink.attributes['href'] ?? '';
+
+          if (title.isNotEmpty && url.isNotEmpty) {
+            // 处理URL，确保是完整链接
+            final fullUrl = url.startsWith('http')
+                ? url
+                : url.startsWith('/')
+                ? 'http://www.jjwxc.net$url'
+                : 'http://www.jjwxc.net/$url';
+
+            allChapters.add(NovelChapter(title: title, url: fullUrl));
+          }
+        }
+      }
+
+      // 6. 创建默认卷（晋江没有分卷，统一放在"全部章节"中）
+      if (allChapters.isNotEmpty) {
+        volumes.add(NovelVolume(volumeName: '全部章节', chapters: allChapters));
+      } else {
+        throw Exception('未找到章节链接，可能是反爬限制');
+      }
+
+      if (volumes.isEmpty) throw Exception('解析到0个章节');
+      return volumes;
+    } catch (e) {
+      setState(() => _statusMessage = '解析失败：$e');
+      return volumes;
+    }
+  }
+
+  /// 核心流程：加载+接口请求+解析
   Future<void> _fetchAndParseCatalog() async {
     setState(() {
       _isLoading = true;
-      _statusMessage = '模拟加载中...';
+      _statusMessage = '';
+      _catalogData.clear();
+      _novelTitle = '';
+      _novelAuthor = '';
     });
 
-    // 模拟加载延迟
-    await Future.delayed(const Duration(seconds: 1));
-    
-    setState(() {
-      _isLoading = false;
-      _statusMessage = '加载完成（仅UI展示）';
-      // 模拟解析到数据
-      _novelTitle = '示例小说标题';
-      _novelAuthor = '示例作者';
-      _bookId = '4170491';
-    });
+    final url = _urlController.text.trim();
+    final regex = RegExp(
+      r'^https://www\.jjwxc\.net/onebook\.php\?novelid=\d+$',
+    );
+    if (!regex.hasMatch(url)) {
+      setState(() {
+        _isLoading = false;
+        _statusMessage =
+            'URL格式錯誤，示例：https://www.jjwxc.net/onebook.php?novelid=9715036';
+      });
+      return;
+    }
+
+    try {
+      setState(() => _statusMessage = '請求接口...');
+
+      setState(() => _statusMessage = '解析章節數據...');
+
+      Map<String, dynamic> bookData = {};
+
+      // TODO 替換邏輯為GET請求
+      // Map<String, dynamic> bookData = await BookFetcher.fetchBook(url);
+
+      _novelAuthor = bookData["novelAuthor"];
+      _novelCover = bookData["novelCover"];
+      _novelTitle = bookData["novelTitle"];
+
+      setState(() {
+        final catalog = bookData["catalogData"];
+        _catalogData = catalog;
+        final totalChapters = catalog.fold(0, (s, v) => s + v.chapters.length);
+        _statusMessage = catalog.isNotEmpty
+            ? '解析成功！共 ${catalog.length} 卷，$totalChapters 章'
+            : '未解析到章节';
+      });
+    } catch (e) {
+      setState(() => _statusMessage = '加载失败：$e');
+    } finally {
+      setState(() => _isLoading = false);
+    }
   }
 
   @override
@@ -94,12 +264,14 @@ class _JjwxcDownloadPageState extends State<JjwxcDownloadPage> {
                   height: 50,
                   width: 200,
                   child: FilledButton(
-                    onPressed: _isLoading ? null : () {
-                      setState(() {
-                        _isTaskAdded = false;
-                      });
-                      _fetchAndParseCatalog();
-                    },
+                    onPressed: (_isLoading)
+                        ? null
+                        : () {
+                            setState(() {
+                              _isTaskAdded = false;
+                            });
+                            _fetchAndParseCatalog();
+                          },
                     style: FilledButton.styleFrom(
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(128),
@@ -109,6 +281,9 @@ class _JjwxcDownloadPageState extends State<JjwxcDownloadPage> {
                         ? Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
+                              // CircularProgressIndicator(
+                              //   color: Colors.white,
+                              // ),
                               ExpressiveLoadingIndicator(
                                 color: Colors.white.withValues(alpha: 0.5),
                               ),
@@ -127,7 +302,9 @@ class _JjwxcDownloadPageState extends State<JjwxcDownloadPage> {
                 child: Text(
                   _statusMessage,
                   style: TextStyle(
-                    color: Theme.of(context).colorScheme.inverseSurface.withAlpha(128),
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.inverseSurface.withAlpha(128),
                     fontSize: 14,
                     fontWeight: FontWeight.w500,
                   ),
@@ -195,25 +372,241 @@ class _JjwxcDownloadPageState extends State<JjwxcDownloadPage> {
                   child: Material(
                     borderRadius: BorderRadius.circular(24),
                     clipBehavior: Clip.hardEdge,
-                    color: Theme.of(context).colorScheme.surfaceContainerLowest,
+                    color:
+                        UserPreferences
+                                .instance
+                                .currentSettingsMap["scaffold_background_image_url"] ==
+                            ""
+                        ? Theme.of(context).colorScheme.surfaceContainerLowest
+                        : Theme.of(
+                            context,
+                          ).colorScheme.surfaceContainerLowest.withAlpha(
+                            UserPreferences
+                                .instance
+                                .currentSettingsMap["ui_alpha"],
+                          ),
                     child: SizedBox(
                       height: 400,
-                      child: const Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Text(
-                              '目录展示区域（仅UI）',
-                              style: TextStyle(
-                                color: Colors.grey,
-                                fontSize: 16,
+                      child: _catalogData.isEmpty
+                          ? const Center(
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Text(
+                                    '等待開始...',
+                                    style: TextStyle(
+                                      color: Colors.grey,
+                                      fontSize: 16,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            )
+                          : Scaffold(
+                              backgroundColor: Colors.transparent,
+                              body: SingleChildScrollView(
+                                padding: const EdgeInsets.all(20),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: _catalogData.map((vol) {
+                                    return Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Ink(
+                                          decoration: BoxDecoration(
+                                            color: Theme.of(
+                                              context,
+                                            ).colorScheme.tertiaryContainer,
+                                            borderRadius: BorderRadius.circular(
+                                              128,
+                                            ),
+                                          ),
+                                          child: Container(
+                                            width: double.infinity,
+                                            padding: const EdgeInsets.symmetric(
+                                              vertical: 8,
+                                              horizontal: 24,
+                                            ),
+                                            margin: const EdgeInsets.symmetric(
+                                              vertical: 8,
+                                            ),
+                                            child: Text(
+                                              '${vol.volumeName}（共${vol.chapters.length}章）',
+                                              style: TextStyle(
+                                                fontSize: 17,
+                                                fontWeight: FontWeight.bold,
+                                                color: Theme.of(context)
+                                                    .colorScheme
+                                                    .onTertiaryContainer,
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                        Padding(
+                                          padding: const EdgeInsets.symmetric(
+                                            vertical: 5,
+                                          ),
+                                          child: Column(
+                                            children: vol.chapters.asMap().entries.map((
+                                              entry,
+                                            ) {
+                                              final idx = entry.key + 1;
+                                              final ch = entry.value;
+                                              return ListTile(
+                                                shape:
+                                                    const RoundedRectangleBorder(
+                                                      borderRadius:
+                                                          BorderRadius.all(
+                                                            Radius.circular(4),
+                                                          ),
+                                                    ),
+                                                leading: CircleAvatar(
+                                                  radius: 12,
+                                                  backgroundColor:
+                                                      Theme.of(context)
+                                                          .colorScheme
+                                                          .surfaceContainerLow,
+                                                  child: Text(
+                                                    '$idx',
+                                                    style: const TextStyle(
+                                                      fontSize: 12,
+                                                    ),
+                                                  ),
+                                                ),
+                                                title: Text(
+                                                  ch.title,
+                                                  style: const TextStyle(
+                                                    fontSize: 15,
+                                                  ),
+                                                  overflow:
+                                                      TextOverflow.ellipsis,
+                                                ),
+                                                subtitle: Text(
+                                                  ch.url,
+                                                  style: TextStyle(
+                                                    fontSize: 12,
+                                                    color: Colors.grey.shade600,
+                                                  ),
+                                                  overflow:
+                                                      TextOverflow.ellipsis,
+                                                ),
+
+                                                onTap: () async {
+                                                  void Function()?
+                                                  closeLoadingDialog;
+                                                  showDialog(
+                                                    barrierDismissible: false,
+                                                    context: context,
+                                                    builder: (context) {
+                                                      closeLoadingDialog = () =>
+                                                          Navigator.pop(
+                                                            context,
+                                                          );
+                                                      return Container(
+                                                        alignment:
+                                                            Alignment.center,
+                                                        child:
+                                                            const ExpressiveLoadingIndicator(
+                                                              contained: true,
+                                                            ),
+                                                      );
+                                                    },
+                                                  );
+
+                                                  String content = "";
+                                                  // final cwm_NovelExtractor
+                                                  // extractor =
+                                                  //     cwm_NovelExtractor();
+                                                  // bool isInitSuccess =
+                                                  //     await extractor
+                                                  //         .initialize();
+
+                                                  // if (isInitSuccess) {
+                                                  //   content = await extractor
+                                                  //       .getNovelContent(
+                                                  //         ch.url,
+                                                  //       );
+
+                                                  //   if (content.contains(
+                                                  //         '失败',
+                                                  //       ) ||
+                                                  //       content.contains(
+                                                  //         '未找到',
+                                                  //       ) ||
+                                                  //       content.contains(
+                                                  //         'URL格式错误',
+                                                  //       )) {
+                                                  //     print('提取失败：$content');
+                                                  //   } else {
+                                                  //     print(
+                                                  //       '提取成功，内容长度：${content.length} 字符',
+                                                  //     );
+                                                  //   }
+
+                                                  //   extractor.dispose();
+                                                  // } else {
+                                                  //   print('工具类初始化失败，无法提取内容');
+                                                  // }
+                                                  // closeLoadingDialog!();
+
+                                                  // 測試用 開始
+                                                  // File txtFile = File(
+                                                  //   "C:/Users/Dinix/Desktop/example.txt",
+                                                  // );
+
+                                                  // await txtFile.writeAsString(
+                                                  //   content,
+                                                  //   encoding:
+                                                  //       Encoding.getByName(
+                                                  //         'utf-8',
+                                                  //       )!,
+                                                  // );
+                                                  // 測試用 結束
+
+                                                  // showDialog(
+                                                  //   context: context,
+                                                  //   builder: (context) {
+                                                  //     return AlertDialog(
+                                                  //       title: Row(
+                                                  //         mainAxisAlignment:
+                                                  //             MainAxisAlignment
+                                                  //                 .spaceBetween,
+                                                  //         children: [
+                                                  //           Text(ch.title),
+                                                  //           IconButton(
+                                                  //             onPressed: () =>
+                                                  //                 Navigator.of(
+                                                  //                   context,
+                                                  //                 ).pop(),
+                                                  //             icon: const Icon(
+                                                  //               Icons.close,
+                                                  //             ),
+                                                  //           ),
+                                                  //         ],
+                                                  //       ),
+                                                  //       content:
+                                                  //           SingleChildScrollView(
+                                                  //             child:
+                                                  //                 SelectableText(
+                                                  //                   content,
+                                                  //                 ),
+                                                  //           ),
+                                                  //     );
+                                                  //   },
+                                                  // );
+                                                },
+                                                //trailing: ExpressiveLoadingIndicator(),
+                                              );
+                                            }).toList(),
+                                          ),
+                                        ),
+                                      ],
+                                    );
+                                  }).toList(),
+                                ),
                               ),
                             ),
-                            SizedBox(height: 16),
-                            Text('业务逻辑已移除')
-                          ],
-                        ),
-                      ),
                     ),
                   ),
                 ),
@@ -224,11 +617,19 @@ class _JjwxcDownloadPageState extends State<JjwxcDownloadPage> {
       ),
 
       bottomNavigationBar: BottomAppBar(
-        color: Theme.of(context).colorScheme.surfaceContainerHighest,
+        color:
+            UserPreferences
+                    .instance
+                    .currentSettingsMap["scaffold_background_image_url"] ==
+                ""
+            ? Theme.of(context).colorScheme.surfaceContainerHighest
+            : Theme.of(context).colorScheme.surfaceContainerHighest.withAlpha(
+                UserPreferences.instance.currentSettingsMap["ui_alpha"],
+              ),
         elevation: 0.0,
         child: Row(
           children: <Widget>[
-            if (_novelTitle.isNotEmpty) ...[
+            if (_catalogData.isNotEmpty) ...[
               IntrinsicWidth(
                 child: RadioListTile<bool>(
                   shape: const RoundedRectangleBorder(
@@ -259,18 +660,61 @@ class _JjwxcDownloadPageState extends State<JjwxcDownloadPage> {
             const Expanded(child: SizedBox()),
 
             FilledButton(
-              onPressed: _novelTitle.isNotEmpty && !_isTaskAdded
+              onPressed:
+                  _catalogData.isNotEmpty &&
+                      _isTaskAdded == false &&
+                      DownloadManager.instance.hasTaskByNovelTitle(
+                            _novelTitle,
+                          ) ==
+                          false
                   ? () {
+                      // final NovelExtractor extractor = NovelExtractor();
+                      // bool isInitSuccess = await extractor.initialize();
+
+                      // if (isInitSuccess) {
+                      //   String novelUrl =
+                      //       'https://www.ciweimao.com/chapter/114373635';
+                      //   String content = await extractor.getNovelContent(
+                      //     novelUrl,
+                      //   );
+
+                      //   if (content.contains('失败') ||
+                      //       content.contains('未找到') ||
+                      //       content.contains('URL格式错误')) {
+                      //     print('提取失败：$content');
+                      //   } else {
+                      //     print('提取成功，内容长度：${content.length} 字符');
+                      //     print('小说内容：$content');
+                      //   }
+
+                      //   extractor.dispose();
+                      // } else {
+                      //   print('工具类初始化失败，无法提取内容');
+                      // }
+
+                      DownloadManager.instance.addDownloadTask(
+                        taskType: TaskType.jjwxc,
+                        coverUrl: _novelCover,
+                        novelAuthor: _novelAuthor,
+                        novelTitle: _novelTitle,
+                        volumes: _catalogData,
+                        isEpub: _isEpub,
+                        savePath:
+                            "${UserPreferences.instance.currentSettingsMap["download_root_path"]}/$_novelTitle",
+                      );
+
                       setState(() {
                         _isTaskAdded = true;
                       });
                     }
                   : null,
-              child: _novelTitle.isEmpty
+              child: _catalogData.isEmpty
                   ? const Text("等待開始")
+                  : DownloadManager.instance.hasTaskByNovelTitle(_novelTitle)
+                  ? const Text("已添加")
                   : _isTaskAdded
-                      ? const Text("已添加")
-                      : const Text("添加到下載列表"),
+                  ? const Text("已添加")
+                  : const Text("添加到下載列表"),
             ),
           ],
         ),

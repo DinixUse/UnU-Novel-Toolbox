@@ -65,7 +65,7 @@ class _DownloaderPageState extends State<DownloaderPage>
               case '刺蝟貓':
                 return const NovelCatalogPage();
               case '晉江文學城':
-                return const JjwxcDownloadPage();
+                return const JjwxcNovelCatalogPage();
               default:
                 return Center(child: Text('未知的下载源：$title'));
             }

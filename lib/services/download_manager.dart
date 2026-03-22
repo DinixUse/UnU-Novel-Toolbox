@@ -390,8 +390,6 @@ class DownloadManager extends ChangeNotifier {
         // 3. 执行任务下载逻辑
         await _executeTask(nextTask);
 
-        
-
         // 4. 任务完成：标记为已完成
         nextTask.progressNotifier.value = 1.0;
         _updateTaskProgress(nextTask, {
@@ -540,17 +538,15 @@ class DownloadManager extends ChangeNotifier {
     Dio dio = Dio();
     Response response = await dio.get(
       task.coverUrl,
-      options: Options(
-        responseType: ResponseType.bytes,
-        followRedirects: true,
-      ),
+      options: Options(responseType: ResponseType.bytes, followRedirects: true),
     );
 
-    File file = File(path.join(novelRootPath, 'Cover.png'));
-    await file.writeAsBytes(response.data);
+    File imgFile = File(path.join(novelRootPath, 'Cover.png'));
+    await imgFile.writeAsBytes(response.data);
 
     // 构建章节任务列表
     List<Map<String, String>> chapterTasks = [];
+
     for (final volume in task.volumes) {
       for (final chapter in volume.chapters) {
         chapterTasks.add({
@@ -631,6 +627,32 @@ class DownloadManager extends ChangeNotifier {
       } finally {
         extractor.dispose();
       }
+
+      Map<String, dynamic> bookInfoMap = {
+        "Title": task.novelTitle,
+        "Author": task.novelAuthor,
+        "BookId": task.hashCode.toString(),
+        "CoverPath": imgFile.path,
+        "Volumes": task.volumes.map((vol) {
+          return {
+            "Title": vol.volumeName,
+            "Chapters": vol.chapters.map((chap) {
+              return {
+                "Title": chap.title,
+                "FilePath": path.join(
+                  novelRootPath,
+                  "Source",
+                  removeWindowsInvalidPathChars(vol.volumeName).trim(),
+                  "${removeWindowsInvalidPathChars(chap.title).trim()}.txt",
+                ),
+              };
+            }).toList(),
+          };
+        }).toList(),
+      };
+
+      File bookInfoFile = File(path.join(novelRootPath, 'BookInfo.json'));
+      await bookInfoFile.writeAsString(jsonEncode(bookInfoMap));
 
       if (task.isEpub) {
         // TODO: EPUB生成逻辑
