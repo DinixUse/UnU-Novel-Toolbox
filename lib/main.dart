@@ -2,8 +2,10 @@ import 'dart:io';
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:window_manager/window_manager.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import 'package:m3e_design/m3e_design.dart';
 import 'package:dynamic_color/dynamic_color.dart';
@@ -693,6 +695,59 @@ class _SettingsPageState extends State<SettingsPage> {
                         context,
                       ).colorScheme.surfaceContainerLowest,
                       trailing: const Icon(Icons.arrow_forward_ios_outlined),
+                    ),
+
+                    const SizedBox(height: 24),
+                    const SettingsHeader(title: "信息"),
+                    SettingsTile(
+                      position: TilePosition.single,
+                      tileIcon: const Icon(Icons.extension),
+                      title: "關於軟體",
+                      subtitle: const Text("Nightly 0.3"),
+                      tileColor: Theme.of(
+                        context,
+                      ).colorScheme.surfaceContainerLowest,
+                      onTap: () => showAboutDialog(
+                        context: context,
+                        applicationName: "UnU Novel Toolbox",
+                        applicationVersion: "Nightly 0.3",
+                        applicationIcon: Image.asset(
+                          "assets/img/Cirno.png",
+                          width: 48,
+                          height: 48,
+                        ),
+                        children: [
+                          const Text("一款基於Flutter的輕量級小說下載與管理工具。"),
+                          const SizedBox(height: 24),
+                          const SettingsHeader(title: "關注我們"),
+                          SettingsTile(
+                            position: TilePosition.first,
+                            tileIcon: const Icon(Icons.movie),
+                            title: "Dinix(UnU) - Bilibili",
+                            tileColor: Theme.of(
+                              context,
+                            ).colorScheme.surfaceContainerLowest,
+                            onTap: () => launchUrl(
+                              Uri.parse(
+                                "https://space.bilibili.com/1865480050",
+                              ),
+                            ),
+                          ),
+                          SettingsTile(
+                            position: TilePosition.last,
+                            tileIcon: const Icon(Icons.gite),
+                            title: "Github Repository",
+                            tileColor: Theme.of(
+                              context,
+                            ).colorScheme.surfaceContainerLowest,
+                            onTap: () => launchUrl(
+                              Uri.parse(
+                                "https://github.com/DinixUse/UnU-Novel-Toolbox",
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ],
                 ),
