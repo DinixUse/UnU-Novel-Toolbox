@@ -6,6 +6,7 @@ import 'package:window_manager/window_manager.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:m3e_design/m3e_design.dart';
+import 'package:dynamic_color/dynamic_color.dart';
 
 import 'services/download_manager.dart';
 import 'main_download_screen.dart';
@@ -87,15 +88,45 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'UnU Novel Toolbox',
-      theme: withM3ETheme(
-        ThemeData(
-          colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF2196F3)),
+    if (UserPreferences.instance.currentSettingsMap["dynamic_app_color"] ==
+        false) {
+      return MaterialApp(
+        title: 'UnU Novel Toolbox',
+        theme: withM3ETheme(
+          ThemeData(
+            colorScheme: ColorScheme.fromSeed(
+              seedColor: const Color(0xFF2196F3),
+            ),
+          ),
         ),
-      ),
-      home: HomePage(),
-    );
+        home: HomePage(),
+      );
+    } else {
+      return DynamicColorBuilder(
+        builder: (lightColorScheme, darkColorScheme) {
+          return MaterialApp(
+            title: 'UnU Novel Toolbox',
+            theme: ThemeData(
+              colorScheme:
+                  lightColorScheme ??
+                  ColorScheme.fromSeed(seedColor: Colors.blue),
+              useMaterial3: true,
+            ),
+            darkTheme: ThemeData(
+              colorScheme:
+                  darkColorScheme ??
+                  ColorScheme.fromSeed(
+                    seedColor: Colors.blue,
+                    brightness: Brightness.dark,
+                  ),
+              useMaterial3: true,
+            ),
+            themeMode: ThemeMode.system,
+            home: HomePage(),
+          );
+        },
+      );
+    }
   }
 }
 
@@ -436,6 +467,12 @@ class _SettingsPageState extends State<SettingsPage> {
         body: CustomScrollView(
           slivers: [
             SliverAppBar(
+              actions: const [
+                Padding(
+                  padding: EdgeInsets.only(top: 24, right: 24),
+                  child: Text("*部分設定需要重啓程式以應用變更"),
+                ),
+              ],
               surfaceTintColor:
                   UserPreferences
                           .instance
@@ -519,6 +556,15 @@ class _SettingsPageState extends State<SettingsPage> {
                               imageOpacity = value;
                             });
                           },
+                          onChangeEnd: (value) async {
+                            setState(() {
+                              UserPreferences
+                                      .instance
+                                      .currentSettingsMap["image_opacity"] =
+                                  value;
+                            });
+                            await UserPreferences.instance.saveSettings();
+                          },
                         ),
                         tileColor: Theme.of(
                           context,
@@ -537,6 +583,15 @@ class _SettingsPageState extends State<SettingsPage> {
                               uiAlpha = (value * 255).toInt();
                             });
                           },
+                          onChangeEnd: (value) async {
+                            setState(() {
+                              UserPreferences
+                                      .instance
+                                      .currentSettingsMap["ui_alpha"] =
+                                  (value * 255).toInt();
+                            });
+                            await UserPreferences.instance.saveSettings();
+                          },
                         ),
                         tileColor: Theme.of(
                           context,
@@ -550,16 +605,28 @@ class _SettingsPageState extends State<SettingsPage> {
                       tileColor: Theme.of(
                         context,
                       ).colorScheme.surfaceContainerLowest,
-                      onTap: () => setState(() {
-                        blurEnabled = !blurEnabled;
-                      }),
+                      onTap: () async {
+                        setState(() {
+                          blurEnabled = !blurEnabled;
+                          UserPreferences
+                                  .instance
+                                  .currentSettingsMap["enable_blur"] =
+                              blurEnabled;
+                        });
+                        await UserPreferences.instance.saveSettings();
+                      },
                       trailing: Switch(
                         thumbIcon: thumbIcon,
                         value: blurEnabled,
-                        onChanged: (val) {
+                        onChanged: (val) async {
                           setState(() {
                             blurEnabled = val;
+                            UserPreferences
+                                    .instance
+                                    .currentSettingsMap["enable_blur"] =
+                                blurEnabled;
                           });
+                          await UserPreferences.instance.saveSettings();
                         },
                       ),
                     ),
@@ -570,16 +637,28 @@ class _SettingsPageState extends State<SettingsPage> {
                       tileColor: Theme.of(
                         context,
                       ).colorScheme.surfaceContainerLowest,
-                      onTap: () => setState(() {
-                        dynamicColorEnabled = !dynamicColorEnabled;
-                      }),
+                      onTap: () async {
+                        setState(() {
+                          dynamicColorEnabled = !dynamicColorEnabled;
+                          UserPreferences
+                                  .instance
+                                  .currentSettingsMap["dynamic_app_color"] =
+                              dynamicColorEnabled;
+                        });
+                        await UserPreferences.instance.saveSettings();
+                      },
                       trailing: Switch(
                         thumbIcon: thumbIcon,
                         value: dynamicColorEnabled,
-                        onChanged: (val) {
+                        onChanged: (val) async {
                           setState(() {
                             dynamicColorEnabled = val;
+                            UserPreferences
+                                    .instance
+                                    .currentSettingsMap["dynamic_app_color"] =
+                                dynamicColorEnabled;
                           });
+                          await UserPreferences.instance.saveSettings();
                         },
                       ),
                     ),
@@ -587,7 +666,7 @@ class _SettingsPageState extends State<SettingsPage> {
                     const SizedBox(height: 24),
                     const SettingsHeader(title: "下載"),
                     SettingsTile(
-                      position: TilePosition.single,
+                      position: TilePosition.first,
                       tileIcon: const Icon(Icons.folder_open),
                       title: "下載路徑",
                       subtitle:
@@ -604,6 +683,16 @@ class _SettingsPageState extends State<SettingsPage> {
                       tileColor: Theme.of(
                         context,
                       ).colorScheme.surfaceContainerLowest,
+                    ),
+                    SettingsTile(
+                      position: TilePosition.last,
+                      tileIcon: const Icon(Icons.extension),
+                      title: "外置模塊管理",
+
+                      tileColor: Theme.of(
+                        context,
+                      ).colorScheme.surfaceContainerLowest,
+                      trailing: const Icon(Icons.arrow_forward_ios_outlined),
                     ),
                   ],
                 ),

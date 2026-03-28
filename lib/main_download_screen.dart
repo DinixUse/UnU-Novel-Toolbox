@@ -6,6 +6,8 @@ import 'package:window_manager/window_manager.dart';
 import 'services/download_manager.dart';
 import 'package:progress_indicator_m3e/progress_indicator_m3e.dart';
 
+import 'preferences.dart';
+
 class MainDownloadScreen extends StatefulWidget {
   const MainDownloadScreen({super.key});
 
@@ -17,6 +19,13 @@ class _MainDownloadScreenState extends State<MainDownloadScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      // backgroundColor:
+      //     UserPreferences
+      //             .instance
+      //             .currentSettingsMap["scaffold_background_image_url"] ==
+      //         ""
+      //     ? Theme.of(context).colorScheme.surface
+      //     : Colors.transparent,
       appBar: AppBar(
         title: const Text("下載項目"),
         flexibleSpace: GestureDetector(

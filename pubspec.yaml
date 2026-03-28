@@ -54,6 +54,7 @@ dependencies:
   progress_indicator_m3e: ^0.1.0
   m3e_design: ^0.1.0
   charset: ^2.0.1
+  dynamic_color: ^1.8.1
 
   # fluent_ui: ^4.14.0
 

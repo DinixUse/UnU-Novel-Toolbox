@@ -35,6 +35,16 @@ class UserPreferences {
     await  _settingsJsonFile.writeAsString(jsonEncode(defaultSettingsMap));
   }
 
+  Future<void> saveSettings () async {
+    Directory _settingsJsonDir = Directory(path.join(applicationPath, "appData"));
+    if(!await _settingsJsonDir.exists()) {
+      await _settingsJsonDir.create(recursive: true);
+    }
+
+    File _settingsJsonFile = File(path.join(applicationPath, "appData\\settings.json"));
+    await  _settingsJsonFile.writeAsString(jsonEncode(currentSettingsMap));
+  }
+
   Future<void> initializePreferences () async {
     Directory _settingsJsonDir = Directory(path.join(applicationPath, "appData"));
     if(!await _settingsJsonDir.exists()) {
