@@ -10,8 +10,69 @@ import 'package:path/path.dart';
 import 'package:webview_windows/webview_windows.dart';
 import 'package:path/path.dart' as path;
 import 'package:url_launcher/url_launcher.dart';
+import 'package:charset/charset.dart';
 
 import '../preferences.dart';
+
+class jjwxc_NovelExtractor {
+  Future<String> fetchChapterHtml(Dio _dio, String url) async {
+    final _response = await _dio.get(
+      url,
+      options: Options(responseType: ResponseType.bytes),
+    );
+    // await File("D:\\msn.txt").writeAsBytes(_response.data);
+    final _document = parse(
+      GbkDecoder(allowMalformed: true).convert(_response.data),
+    );
+    // final String content = Charset.decode('gbk', _response.data);
+    // final _document = parse(content);
+
+    final dom.Element? contentElement = _document.querySelector(
+      'div[onselectstart="return false"][oncopy="return false"]',
+    );
+
+    if (contentElement != null) {
+      // return _parseHtmlString(contentElement).trim();
+      String rawHtml = contentElement.innerHtml;
+
+      // print(rawHtml);
+
+      final contentRegex = RegExp(
+        r'\s*clear:both;"></div>\s*(.*?)\s*<div id="favoriteshow_3"',
+      );
+      final match = contentRegex.firstMatch(rawHtml);
+
+      print(match?.group(1));
+
+      if (match != null) {
+        rawHtml = match.group(1) ?? rawHtml;
+      }
+      // 1. 将 <br> 或 <br/> 替换为换行符
+      String content = rawHtml.replaceAll(
+        RegExp(r'<br\s*/?>', caseSensitive: false),
+        '\n',
+      );
+
+      // 2. 如果还有其他标签（如 <p>），可以视情况替换
+      // content = content.replaceAll('</p>', '\n');
+
+      // 3. 去掉剩下的所有 HTML 标签（可选）
+      content = content.replaceAll(RegExp(r'<[^>]*>'), '');
+
+      // 4. 处理 HTML 实体字符（如 &nbsp; 变为空格）
+      // 注意：你需要引入 html_escape 或手动处理常用实体
+      content = content
+          .replaceAll('&nbsp;', ' ')
+          .replaceAll('&quot;', '"')
+          .replaceAll('&lt;', '<')
+          .replaceAll('&gt;', '>');
+
+      return "　　${content.trim()}";
+    } else {
+      throw Exception('Content element not found');
+    }
+  }
+}
 
 // ========== 1. 刺猬猫内容提取工具（完全移除Isolate依赖） ==========
 class cwm_NovelExtractor {
@@ -627,8 +688,55 @@ class DownloadManager extends ChangeNotifier {
       } finally {
         extractor.dispose();
       }
+    }
 
-      Map<String, dynamic> bookInfoMap = {
+    /// 刺蝟貓結束
+
+    /// 如果是晉江
+
+    if (task.taskType == TaskType.jjwxc) {
+      final extractor = jjwxc_NovelExtractor();
+      final double progressStep = 1.0 / chapterTasks.length;
+
+      Dio _dio = Dio();
+
+      try {
+        for (int i = 0; i < chapterTasks.length; i++) {
+          final chapter = chapterTasks[i];
+          String content = await extractor.fetchChapterHtml(
+            _dio,
+            chapter["url"]!,
+          );
+
+          final saveFile = File(chapter["savepath"]!);
+          await Directory(saveFile.parent.path).create(recursive: true);
+          await saveFile.writeAsString(content);
+
+          task.progressNotifier.value += progressStep;
+          _updateTaskProgress(task, {
+            'completed': i + 1,
+            'progress': task.progress,
+            'currentChapter': chapter["savepath"]!.split(path.separator).last,
+          });
+
+          stdout.writeln(
+            "已下载章节 ${i + 1}/${chapterTasks.length}：${chapter["savepath"]}",
+          );
+          stdout.flush();
+        }
+      } catch (e) {
+        print("下载章节失败：$e");
+      }
+    }
+
+    /// 晉江結束
+
+    Map<String, dynamic> bookInfoMap = {
+      "OutputFilePath": path.join(
+        novelRootPath,
+        "${removeWindowsInvalidPathChars(task.novelTitle).trim()}.epub",
+      ),
+      "BookContent": {
         "Title": task.novelTitle,
         "Author": task.novelAuthor,
         "BookId": task.hashCode.toString(),
@@ -649,27 +757,25 @@ class DownloadManager extends ChangeNotifier {
             }).toList(),
           };
         }).toList(),
-      };
+      },
+    };
 
-      File bookInfoFile = File(path.join(novelRootPath, 'BookInfo.json'));
-      await bookInfoFile.writeAsString(jsonEncode(bookInfoMap));
+    File bookInfoFile = File(path.join(novelRootPath, 'BookInfo.json'));
+    await bookInfoFile.writeAsString(jsonEncode(bookInfoMap));
 
-      if (task.isEpub) {
-        // TODO: EPUB生成逻辑
-      } else {
-        String outputPath = path.join(
-          novelRootPath,
-          "${removeWindowsInvalidPathChars(task.novelTitle).trim()}.txt",
-        );
-        bool _result = await mergeTxtFiles(
-          chapterTasks: chapterTasks,
-          outputPath: outputPath,
-        );
-        print(_result);
-      }
+    if (task.isEpub) {
+      // TODO: EPUB生成逻辑
+    } else {
+      String outputPath = path.join(
+        novelRootPath,
+        "${removeWindowsInvalidPathChars(task.novelTitle).trim()}.txt",
+      );
+      bool _result = await mergeTxtFiles(
+        chapterTasks: chapterTasks,
+        outputPath: outputPath,
+      );
+      print(_result);
     }
-
-    /// 刺蝟貓結束
   }
 
   // 添加任务到等待队列（核心：仅添加，不中断当前任务）

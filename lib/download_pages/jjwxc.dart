@@ -3,6 +3,8 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:dio/dio.dart';
+import 'package:charset/charset.dart';
 import 'package:html/parser.dart' show parse;
 import 'package:html/dom.dart' as dom;
 import 'package:unu_novel_toolbox/preferences.dart';
@@ -196,9 +198,57 @@ class _JjwxcNovelCatalogPageState extends State<JjwxcNovelCatalogPage> {
     try {
       setState(() => _statusMessage = '請求接口...');
 
-      setState(() => _statusMessage = '解析章節數據...');
+      Dio dio = Dio();
 
       Map<String, dynamic> bookData = {};
+      final _response = await dio.get(
+        url,
+        options: Options(responseType: ResponseType.bytes),
+      );
+      final _htmlString = GbkDecoder().convert(_response.data);
+      final _document = parse(_htmlString);
+
+      setState(() => _statusMessage = '解析章節數據...');
+
+      final List<dom.Element> _paragraphElements = _document.querySelectorAll(
+        'tr[itemprop="chapter"][itemtype="http://schema.org/Chapter"]',
+      );
+
+      List<NovelVolume> _volumes = [];
+      List<NovelChapter> _chapters = [];
+
+      for (final singleElement in _paragraphElements) {
+        final _urlLink = singleElement.querySelector('a[itemprop="url"]');
+
+        if (_urlLink == null) continue;
+
+        if (_urlLink.attributes['href'] == null) continue;
+
+        _chapters.add(
+          NovelChapter(
+            title: _urlLink.text.trim(),
+            url: _urlLink.attributes['href']?.trim() ?? "Error reading URL",
+          ),
+        );
+      }
+
+      _volumes.add(NovelVolume(volumeName: '全部章节', chapters: _chapters));
+
+      bookData["catalogData"] = _volumes;
+
+      bookData["novelTitle"] =
+          _document.querySelector("title")?.text.trim() ?? "書名解析失敗";
+      bookData["novelAuthor"] =
+          _document
+              .querySelector('meta[name="Author"]')
+              ?.attributes['content']
+              ?.trim() ??
+          "作者解析失敗";
+      bookData["novelCover"] =
+          _document
+              .querySelector('img.noveldefaultimage')
+              ?.attributes["_src"] ??
+          "https://gd-hbimg.huaban.com/501f05df7cf3f7d94911329ad33e4365fbee4a3ef777-KBS5Su_fw658";
 
       // TODO 替換邏輯為GET請求
       // Map<String, dynamic> bookData = await BookFetcher.fetchBook(url);
@@ -495,6 +545,7 @@ class _JjwxcNovelCatalogPageState extends State<JjwxcNovelCatalogPage> {
                                                 onTap: () async {
                                                   void Function()?
                                                   closeLoadingDialog;
+
                                                   showDialog(
                                                     barrierDismissible: false,
                                                     context: context,
@@ -515,6 +566,14 @@ class _JjwxcNovelCatalogPageState extends State<JjwxcNovelCatalogPage> {
                                                   );
 
                                                   String content = "";
+                                                  final jjwxc_NovelExtractor
+                                                  extractor =
+                                                      jjwxc_NovelExtractor();
+                                                  content = await extractor
+                                                      .fetchChapterHtml(
+                                                        Dio(),
+                                                        ch.url,
+                                                      );
                                                   // final cwm_NovelExtractor
                                                   // extractor =
                                                   //     cwm_NovelExtractor();
@@ -548,7 +607,7 @@ class _JjwxcNovelCatalogPageState extends State<JjwxcNovelCatalogPage> {
                                                   // } else {
                                                   //   print('工具类初始化失败，无法提取内容');
                                                   // }
-                                                  // closeLoadingDialog!();
+                                                  closeLoadingDialog!();
 
                                                   // 測試用 開始
                                                   // File txtFile = File(
@@ -564,37 +623,37 @@ class _JjwxcNovelCatalogPageState extends State<JjwxcNovelCatalogPage> {
                                                   // );
                                                   // 測試用 結束
 
-                                                  // showDialog(
-                                                  //   context: context,
-                                                  //   builder: (context) {
-                                                  //     return AlertDialog(
-                                                  //       title: Row(
-                                                  //         mainAxisAlignment:
-                                                  //             MainAxisAlignment
-                                                  //                 .spaceBetween,
-                                                  //         children: [
-                                                  //           Text(ch.title),
-                                                  //           IconButton(
-                                                  //             onPressed: () =>
-                                                  //                 Navigator.of(
-                                                  //                   context,
-                                                  //                 ).pop(),
-                                                  //             icon: const Icon(
-                                                  //               Icons.close,
-                                                  //             ),
-                                                  //           ),
-                                                  //         ],
-                                                  //       ),
-                                                  //       content:
-                                                  //           SingleChildScrollView(
-                                                  //             child:
-                                                  //                 SelectableText(
-                                                  //                   content,
-                                                  //                 ),
-                                                  //           ),
-                                                  //     );
-                                                  //   },
-                                                  // );
+                                                  showDialog(
+                                                    context: context,
+                                                    builder: (context) {
+                                                      return AlertDialog(
+                                                        title: Row(
+                                                          mainAxisAlignment:
+                                                              MainAxisAlignment
+                                                                  .spaceBetween,
+                                                          children: [
+                                                            Text(ch.title),
+                                                            IconButton(
+                                                              onPressed: () =>
+                                                                  Navigator.of(
+                                                                    context,
+                                                                  ).pop(),
+                                                              icon: const Icon(
+                                                                Icons.close,
+                                                              ),
+                                                            ),
+                                                          ],
+                                                        ),
+                                                        content:
+                                                            SingleChildScrollView(
+                                                              child:
+                                                                  SelectableText(
+                                                                    content,
+                                                                  ),
+                                                            ),
+                                                      );
+                                                    },
+                                                  );
                                                 },
                                                 //trailing: ExpressiveLoadingIndicator(),
                                               );
