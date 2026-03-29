@@ -55,8 +55,11 @@ dependencies:
   m3e_design: ^0.1.0
   charset: ^2.0.1
   dynamic_color: ^1.8.1
+  flutter_acrylic: ^1.1.4
+  system_theme: ^3.2.0
 
-  # fluent_ui: ^4.14.0
+  fluent_ui: ^4.15.1
+  provider: ^6.1.5+1
 
 dev_dependencies:
   flutter_test:
