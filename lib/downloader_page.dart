@@ -18,7 +18,7 @@ class _DownloaderPageState extends State<DownloaderPage>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
 
-  final List<String> _tabTitles = ['刺蝟貓', '晉江文學城'];
+  final List<String> _tabTitles = ['刺蝟貓', '晉江文學城', '百合會'];
 
   @override
   void initState() {
@@ -66,6 +66,8 @@ class _DownloaderPageState extends State<DownloaderPage>
                 return const NovelCatalogPage();
               case '晉江文學城':
                 return const JjwxcNovelCatalogPage();
+              case '百合會':
+                return const Center(child: Text('施工中...'));
               default:
                 return Center(child: Text('未知的下载源：$title'));
             }

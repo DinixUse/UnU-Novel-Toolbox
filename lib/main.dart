@@ -3,6 +3,7 @@ import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:unu_novel_toolbox/converter_page.dart';
 import 'package:window_manager/window_manager.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -157,7 +158,7 @@ class _HomePageState extends State<HomePage>
     const AppTab(
       title: "轉換工具",
       icon: Icons.conveyor_belt,
-      page: Center(child: Text("轉換工具頁内容", style: TextStyle(fontSize: 24))),
+      page: ConverterPage(),
     ),
     const AppTab(title: "設定", icon: Icons.settings, page: SettingsPage()),
     // const AppTab(
@@ -511,7 +512,7 @@ class _SettingsPageState extends State<SettingsPage> {
                     SettingsTile(
                       position: TilePosition.first,
                       tileIcon: const Icon(Icons.color_lens),
-                      title: "强調色",
+                      title: const Text("强調色"),
                       subtitle: const Text("選擇應用强調色"),
                       tileColor: Theme.of(
                         context,
@@ -527,7 +528,7 @@ class _SettingsPageState extends State<SettingsPage> {
                     SettingsTile(
                       position: TilePosition.middle,
                       tileIcon: const Icon(Icons.image),
-                      title: "背景圖片",
+                      title: const Text("背景圖片"),
                       subtitle:
                           UserPreferences
                                   .instance
@@ -548,7 +549,7 @@ class _SettingsPageState extends State<SettingsPage> {
                       SettingsTile(
                         position: TilePosition.middle,
                         tileIcon: const Icon(Icons.opacity),
-                        title: "圖片不透明度",
+                        title: const Text("圖片不透明度"),
                         subtitle: Slider(
                           divisions: 10,
                           label: imageOpacity.toString(),
@@ -575,7 +576,7 @@ class _SettingsPageState extends State<SettingsPage> {
                       SettingsTile(
                         position: TilePosition.middle,
                         tileIcon: const Icon(Icons.umbrella_outlined),
-                        title: "UI不透明度",
+                        title: const Text("UI不透明度"),
                         subtitle: Slider(
                           divisions: 255,
                           label: uiAlpha.toString(),
@@ -603,7 +604,7 @@ class _SettingsPageState extends State<SettingsPage> {
                     SettingsTile(
                       position: TilePosition.middle,
                       tileIcon: const Icon(Icons.blur_circular),
-                      title: "模糊效果",
+                      title: const Text("模糊效果"),
                       tileColor: Theme.of(
                         context,
                       ).colorScheme.surfaceContainerLowest,
@@ -635,7 +636,7 @@ class _SettingsPageState extends State<SettingsPage> {
                     SettingsTile(
                       position: TilePosition.last,
                       tileIcon: const Icon(Icons.auto_awesome),
-                      title: "動態取色",
+                      title: const Text("動態取色"),
                       tileColor: Theme.of(
                         context,
                       ).colorScheme.surfaceContainerLowest,
@@ -666,11 +667,11 @@ class _SettingsPageState extends State<SettingsPage> {
                     ),
 
                     const SizedBox(height: 24),
-                    const SettingsHeader(title: "下載"),
+                    const SettingsHeader(title: "行爲"),
                     SettingsTile(
                       position: TilePosition.first,
                       tileIcon: const Icon(Icons.folder_open),
-                      title: "下載路徑",
+                      title: const Text("下載路徑"),
                       subtitle:
                           UserPreferences
                                   .instance
@@ -687,9 +688,28 @@ class _SettingsPageState extends State<SettingsPage> {
                       ).colorScheme.surfaceContainerLowest,
                     ),
                     SettingsTile(
+                      position: TilePosition.middle,
+                      tileIcon: const Icon(Icons.explicit_rounded),
+                      title: const Text("Ebook Converter路徑"),
+                      subtitle:
+                          UserPreferences
+                                  .instance
+                                  .currentSettingsMap["ebook-converter-path"] !=
+                              ""
+                          ? Text(
+                              UserPreferences
+                                  .instance
+                                  .currentSettingsMap["ebook-converter-path"],
+                            )
+                          : null,
+                      tileColor: Theme.of(
+                        context,
+                      ).colorScheme.surfaceContainerLowest,
+                    ),
+                    SettingsTile(
                       position: TilePosition.last,
                       tileIcon: const Icon(Icons.extension),
-                      title: "外置模塊管理",
+                      title: const Text("外置模塊管理"),
 
                       tileColor: Theme.of(
                         context,
@@ -702,7 +722,7 @@ class _SettingsPageState extends State<SettingsPage> {
                     SettingsTile(
                       position: TilePosition.single,
                       tileIcon: const Icon(Icons.extension),
-                      title: "關於軟體",
+                      title: const Text("關於軟體"),
                       subtitle: const Text("Nightly 0.3"),
                       tileColor: Theme.of(
                         context,
@@ -723,7 +743,7 @@ class _SettingsPageState extends State<SettingsPage> {
                           SettingsTile(
                             position: TilePosition.first,
                             tileIcon: const Icon(Icons.movie),
-                            title: "Dinix(UnU) - Bilibili",
+                            title: const Text("Dinix(UnU) - Bilibili"),
                             tileColor: Theme.of(
                               context,
                             ).colorScheme.surfaceContainerLowest,
@@ -736,7 +756,7 @@ class _SettingsPageState extends State<SettingsPage> {
                           SettingsTile(
                             position: TilePosition.last,
                             tileIcon: const Icon(Icons.gite),
-                            title: "Github Repository",
+                            title: const Text("Github Repository"),
                             tileColor: Theme.of(
                               context,
                             ).colorScheme.surfaceContainerLowest,
@@ -800,8 +820,8 @@ class SettingsHeader extends StatelessWidget {
 
 class SettingsTile extends StatelessWidget {
   final TilePosition position;
-  final Icon tileIcon;
-  final String title;
+  final Icon? tileIcon;
+  final Widget title;
   final Widget? subtitle;
   final VoidCallback? onTap;
   final Color? tileColor;
@@ -809,8 +829,9 @@ class SettingsTile extends StatelessWidget {
   const SettingsTile({
     super.key,
     required this.position,
-    required this.tileIcon,
+    
     required this.title,
+    this.tileIcon,
     this.subtitle,
     this.onTap,
     this.tileColor,
@@ -859,7 +880,7 @@ class SettingsTile extends StatelessWidget {
                     : UserPreferences.instance.currentSettingsMap["ui_alpha"],
               ),
         leading: tileIcon,
-        title: Text(title),
+        title: title,
         subtitle: subtitle,
         trailing: trailing,
         onTap: onTap ?? () {},

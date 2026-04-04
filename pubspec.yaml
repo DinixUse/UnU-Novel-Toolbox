@@ -57,6 +57,11 @@ dependencies:
   dynamic_color: ^1.8.1
   flutter_acrylic: ^1.1.4
   system_theme: ^3.2.0
+  file_selector: ^1.1.0
+  file_selector_windows: ^0.9.3+5
+  path_provider: ^2.1.5
+  m3e_expandable: ^0.0.1
+
 
   fluent_ui: ^4.15.1
   provider: ^6.1.5+1

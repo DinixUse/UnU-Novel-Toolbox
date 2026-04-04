@@ -20,7 +20,8 @@ class UserPreferences {
     "download_root_path": "C:\\UnUDownloads",
     "app_color": 4280391411,
     "dynamic_app_color": false,
-    "enable_blur": false
+    "enable_blur": false,
+    "ebook-converter-path":""
   };
 
   Map<String, dynamic> currentSettingsMap = {};
