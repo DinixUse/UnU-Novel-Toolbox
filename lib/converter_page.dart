@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:file_selector/file_selector.dart';
 import 'package:flutter/material.dart';
@@ -8,6 +9,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:window_manager/window_manager.dart';
 import 'package:file_selector_windows/file_selector_windows.dart';
 import 'package:m3e_expandable/m3e_expandable.dart';
+import 'package:charset_converter/charset_converter.dart';
 
 import 'widgets/widgets.dart';
 import 'preferences.dart';
@@ -68,23 +70,21 @@ class _ConverterPageState extends State<ConverterPage> {
     String outputHtmlPath,
     String bookTitle,
   ) async {
-    //final inputTxtPath = 'input.txt';
-    //final outputHtmlPath = 'output.html';
-
     try {
-      // 1. 读取TXT内容，按换行分割成行列表
-      String txtContent = await File(inputTxtPath).readAsString(encoding: utf8);
-      List<String> lines = txtContent.split('\n');
+      Uint8List bytes = await File(inputTxtPath).readAsBytes();
 
+
+      String txtContent = utf8.decode(bytes);
+
+      List<String> lines = txtContent.split('\n');
       List<String> processedLines = [];
+
       for (String line in lines) {
         String trimmedLine = line.trim();
-
         if (trimmedLine.isEmpty) continue;
 
         bool isHtmlTagLine =
             trimmedLine.startsWith('<') && trimmedLine.endsWith('>');
-
         if (isHtmlTagLine) {
           processedLines.add(line);
         } else {
@@ -99,6 +99,10 @@ class _ConverterPageState extends State<ConverterPage> {
 <head>
   <meta charset="UTF-8">
   <title>$bookTitle</title>
+  <style>
+    body { font-family: "Microsoft YaHei", sans-serif; line-height: 1.8; font-size: 16px; }
+    p { margin: 0.6em 0; text-align: justify; }
+  </style>
 </head>
 <body>
 ${processedLines.join('\n')}
@@ -107,9 +111,9 @@ ${processedLines.join('\n')}
 ''';
 
       await File(outputHtmlPath).writeAsString(htmlContent, encoding: utf8);
-      print('转换完成！HTML文件已保存至：$outputHtmlPath');
+      print('转换成功：$outputHtmlPath');
     } catch (e) {
-      print('转换失败：$e');
+      print('失败：$e');
     }
   }
 
@@ -144,7 +148,6 @@ ${processedLines.join('\n')}
               title: Card(
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(24),
-                  
                 ),
                 color: Theme.of(context).colorScheme.error,
                 child: ListTile(
@@ -171,10 +174,7 @@ ${processedLines.join('\n')}
               UserPreferences.instance.currentSettingsMap["ui_alpha"],
             ),
       body: Padding(
-        padding: const EdgeInsets.only(
-          right: 24,
-          left: 24
-        ),
+        padding: const EdgeInsets.only(right: 24, left: 24),
         child: SingleChildScrollView(
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -186,7 +186,7 @@ ${processedLines.join('\n')}
               //         "Path to ebook-convert.exe (e.g. D:\\calibre\\ebook-convert.exe)",
               //   ),
               // ),
-              const SizedBox(height: 8,),
+              const SizedBox(height: 8),
               Row(
                 children: [
                   FilledButton.tonal(
@@ -196,6 +196,7 @@ ${processedLines.join('\n')}
 
                       showDialog(
                         context: context,
+                        barrierDismissible: false,
                         builder: (context) {
                           _closeDialogFunction = () =>
                               Navigator.of(context).pop();
@@ -277,6 +278,7 @@ ${processedLines.join('\n')}
                       Function? _closeDialogFunction;
 
                       showDialog(
+                        barrierDismissible: false,
                         context: context,
                         builder: (context) {
                           _closeDialogFunction = () =>
@@ -376,6 +378,7 @@ ${processedLines.join('\n')}
                                 Function? _closeDialogFunction;
 
                                 showDialog(
+                                  barrierDismissible: false,
                                   context: context,
                                   builder: (context) {
                                     _closeDialogFunction = () =>
@@ -725,7 +728,9 @@ ${processedLines.join('\n')}
                             // 5. Start Process
                             try {
                               final Process process = await Process.start(
-                                _ebookConverterPathController.text,
+                                UserPreferences
+                                    .instance
+                                    .currentSettingsMap["ebook-converter-path"],
                                 arguments,
                               );
 

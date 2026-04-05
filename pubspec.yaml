@@ -61,6 +61,7 @@ dependencies:
   file_selector_windows: ^0.9.3+5
   path_provider: ^2.1.5
   m3e_expandable: ^0.0.1
+  charset_converter: ^2.1.1
 
 
   fluent_ui: ^4.15.1

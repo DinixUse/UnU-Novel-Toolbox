@@ -7,6 +7,7 @@ import 'package:unu_novel_toolbox/converter_page.dart';
 import 'package:window_manager/window_manager.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:file_selector/file_selector.dart';
 
 import 'package:m3e_design/m3e_design.dart';
 import 'package:dynamic_color/dynamic_color.dart';
@@ -16,6 +17,7 @@ import 'main_download_screen.dart';
 import 'downloader_page.dart';
 import 'preferences.dart';
 import 'welcome_page.dart';
+import 'widgets/widgets.dart';
 
 import 'testing.dart';
 import 'testing_2.dart';
@@ -451,6 +453,16 @@ class _SettingsPageState extends State<SettingsPage> {
     return const Icon(Icons.close);
   });
 
+  XTypeGroup imgTypeGroup = const XTypeGroup(
+    label: 'images',
+    extensions: <String>['jpg', 'png', 'bmp'],
+    uniformTypeIdentifiers: <String>[
+      'public.jpeg',
+      'public.png',
+      'com.microsoft.bmp',
+    ],
+  );
+
   @override
   Widget build(BuildContext context) {
     return BackdropFilter(
@@ -541,6 +553,41 @@ class _SettingsPageState extends State<SettingsPage> {
                       tileColor: Theme.of(
                         context,
                       ).colorScheme.surfaceContainerLowest,
+                      onTap: () async {
+                        Function? _closeDialogFunction;
+
+                        showDialog(
+                          barrierDismissible: false,
+                          context: context,
+                          builder: (context) {
+                            _closeDialogFunction = () =>
+                                Navigator.of(context).pop();
+                            return const Center(
+                              child: ExpressiveLoadingIndicator(
+                                contained: true,
+                              ),
+                            );
+                          },
+                        );
+
+                        XFile? _imgUri = await openFile(
+                          acceptedTypeGroups: <XTypeGroup>[imgTypeGroup],
+                        );
+
+                        if (_closeDialogFunction != null) {
+                          _closeDialogFunction!();
+                        }
+
+                        if (_imgUri != null) {
+                          setState(() {
+                            UserPreferences
+                                    .instance
+                                    .currentSettingsMap["scaffold_background_image_url"] =
+                                _imgUri.path;
+                          });
+                          await UserPreferences.instance.saveSettings();
+                        }
+                      },
                     ),
                     if (UserPreferences
                             .instance
@@ -686,6 +733,39 @@ class _SettingsPageState extends State<SettingsPage> {
                       tileColor: Theme.of(
                         context,
                       ).colorScheme.surfaceContainerLowest,
+                      onTap: () async {
+                        Function? _closeDialogFunction;
+
+                        showDialog(
+                          barrierDismissible: false,
+                          context: context,
+                          builder: (context) {
+                            _closeDialogFunction = () =>
+                                Navigator.of(context).pop();
+                            return const Center(
+                              child: ExpressiveLoadingIndicator(
+                                contained: true,
+                              ),
+                            );
+                          },
+                        );
+
+                        String? _downloadUri = await getDirectoryPath();
+
+                        if (_closeDialogFunction != null) {
+                          _closeDialogFunction!();
+                        }
+
+                        if (_downloadUri != null) {
+                          setState(() {
+                            UserPreferences
+                                    .instance
+                                    .currentSettingsMap["download_root_path"] =
+                                _downloadUri;
+                          });
+                          await UserPreferences.instance.saveSettings();
+                        }
+                      },
                     ),
                     SettingsTile(
                       position: TilePosition.middle,
@@ -705,6 +785,52 @@ class _SettingsPageState extends State<SettingsPage> {
                       tileColor: Theme.of(
                         context,
                       ).colorScheme.surfaceContainerLowest,
+
+                      onTap: () async {
+                        Function? _closeDialogFunction;
+
+                        showDialog(
+                          barrierDismissible: false,
+                          context: context,
+                          builder: (context) {
+                            _closeDialogFunction = () =>
+                                Navigator.of(context).pop();
+                            return const Center(
+                              child: ExpressiveLoadingIndicator(
+                                contained: true,
+                              ),
+                            );
+                          },
+                        );
+
+                        XFile? _ebookConverterExeUri = await openFile(
+                          acceptedTypeGroups: <XTypeGroup>[
+                            const XTypeGroup(
+                              label: "Executable",
+                              extensions: <String>[
+                                "exe"
+                              ],
+                              uniformTypeIdentifiers: <String>[
+                                "com.microsoft.windows-executable"
+                              ]
+                            )
+                          ],
+                        );
+
+                        if (_closeDialogFunction != null) {
+                          _closeDialogFunction!();
+                        }
+
+                        if (_ebookConverterExeUri != null) {
+                          setState(() {
+                            UserPreferences
+                                    .instance
+                                    .currentSettingsMap["ebook-converter-path"] =
+                                _ebookConverterExeUri.path;
+                          });
+                          await UserPreferences.instance.saveSettings();
+                        }
+                      },
                     ),
                     SettingsTile(
                       position: TilePosition.last,
@@ -721,7 +847,7 @@ class _SettingsPageState extends State<SettingsPage> {
                     const SettingsHeader(title: "信息"),
                     SettingsTile(
                       position: TilePosition.single,
-                      tileIcon: const Icon(Icons.extension),
+                      tileIcon: const Icon(Icons.info),
                       title: const Text("關於軟體"),
                       subtitle: const Text("Nightly 0.3"),
                       tileColor: Theme.of(
@@ -829,7 +955,7 @@ class SettingsTile extends StatelessWidget {
   const SettingsTile({
     super.key,
     required this.position,
-    
+
     required this.title,
     this.tileIcon,
     this.subtitle,

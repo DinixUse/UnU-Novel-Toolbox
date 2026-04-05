@@ -3,6 +3,7 @@
 #
 
 list(APPEND FLUTTER_PLUGIN_LIST
+  charset_converter
   dynamic_color
   file_selector_windows
   flutter_acrylic
