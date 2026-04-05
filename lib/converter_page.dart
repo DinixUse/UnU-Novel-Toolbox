@@ -617,8 +617,10 @@ ${processedLines.join('\n')}
 
                               String _targetOriginFilePath = _ebookFile!.path;
                               String _ebookString = await _ebookFile!
-                                  .readAsString(encoding: systemEncoding);
+                                  .readAsString(encoding: utf8);
                               String _result = _ebookString;
+
+                              print(_ebookString.substring(0, 918));
 
                               // 1. Apply Text Replacements (Regex)
                               if (_volumeDetectRule.text != "") {
@@ -860,6 +862,8 @@ ${processedLines.join('\n')}
                     ),
                   ],
                 ),
+
+                const SizedBox(height: 24),
               ],
             ),
           ),
