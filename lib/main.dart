@@ -162,7 +162,11 @@ class _HomePageState extends State<HomePage>
       icon: Icons.conveyor_belt,
       page: ConverterPage(),
     ),
-    const AppTab(title: "設定", icon: Icons.settings, page: SettingsPage()),
+    AppTab(
+      title: "設定",
+      icon: Icons.settings,
+      page: OuterSettingsPage(key: globalSettingsPageTransferKey),
+    ),
     // const AppTab(
     //   title: "測試頁面",
     //   icon: Icons.toc_outlined,
@@ -429,6 +433,87 @@ class _HomePageState extends State<HomePage>
   }
 }
 
+class OuterSettingsPage extends StatefulWidget {
+  const OuterSettingsPage({super.key});
+
+  @override
+  State<OuterSettingsPage> createState() => _OuterSettingsPageState();
+}
+
+final GlobalKey<_OuterSettingsPageState> globalSettingsPageTransferKey =
+    GlobalKey();
+
+class _OuterSettingsPageState extends State<OuterSettingsPage> {
+  Widget _currentPage = const SettingsPage(key: ValueKey('settings'));
+  bool _isForward = true;
+  final Curve _transitionCurve = Curves.fastOutSlowIn;
+
+  Widget _androidPageTransitionForward(
+    Widget child,
+    Animation<double> animation,
+  ) {
+    final enterAnimation = Tween<Offset>(
+      begin: const Offset(1.0, 0.0),
+      end: Offset.zero,
+    ).animate(CurvedAnimation(parent: animation, curve: _transitionCurve));
+
+    final exitAnimation = Tween<Offset>(
+      begin: const Offset(-1.0, 0.0),
+      end: Offset.zero,
+    ).animate(CurvedAnimation(parent: animation, curve: _transitionCurve));
+
+    return SlideTransition(
+      position: child.key == _currentPage.key ? enterAnimation : exitAnimation,
+      child: FadeTransition(opacity: animation, child: child),
+    );
+  }
+
+  Widget _androidPageTransitionBack(Widget child, Animation<double> animation) {
+    final exitAnimation = Tween<Offset>(
+      begin: const Offset(1.0, 0.0),
+      end: Offset.zero,
+    ).animate(CurvedAnimation(parent: animation, curve: _transitionCurve));
+
+    final enterAnimation = Tween<Offset>(
+      begin: const Offset(-1.0, 0.0),
+      end: Offset.zero,
+    ).animate(CurvedAnimation(parent: animation, curve: _transitionCurve));
+
+    return SlideTransition(
+      position: child.key == _currentPage.key ? enterAnimation : exitAnimation,
+      child: FadeTransition(opacity: animation, child: child),
+    );
+  }
+
+  void changePageTo(Widget page) {
+    setState(() {
+      _isForward = true;
+      _currentPage = page;
+    });
+  }
+
+  void goBackTo(Widget page) {
+    setState(() {
+      _isForward = false;
+      _currentPage = page;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.transparent,
+      body: AnimatedSwitcher(
+        duration: const Duration(milliseconds: 300),
+        transitionBuilder: (child, animation) => _isForward
+            ? _androidPageTransitionForward(child, animation)
+            : _androidPageTransitionBack(child, animation),
+        child: _currentPage,
+      ),
+    );
+  }
+}
+
 class SettingsPage extends StatefulWidget {
   const SettingsPage({super.key});
 
@@ -553,6 +638,24 @@ class _SettingsPageState extends State<SettingsPage> {
                       tileColor: Theme.of(
                         context,
                       ).colorScheme.surfaceContainerLowest,
+                      trailing:
+                          UserPreferences
+                                  .instance
+                                  .currentSettingsMap["scaffold_background_image_url"] ==
+                              ""
+                          ? null
+                          : FilledButton.tonal(
+                              onPressed: () async {
+                                setState(() {
+                                  UserPreferences
+                                          .instance
+                                          .currentSettingsMap["scaffold_background_image_url"] =
+                                      "";
+                                });
+                                await UserPreferences.instance.saveSettings();
+                              },
+                              child: const Text("清除"),
+                            ),
                       onTap: () async {
                         Function? _closeDialogFunction;
 
@@ -807,13 +910,11 @@ class _SettingsPageState extends State<SettingsPage> {
                           acceptedTypeGroups: <XTypeGroup>[
                             const XTypeGroup(
                               label: "Executable",
-                              extensions: <String>[
-                                "exe"
-                              ],
+                              extensions: <String>["exe"],
                               uniformTypeIdentifiers: <String>[
-                                "com.microsoft.windows-executable"
-                              ]
-                            )
+                                "com.microsoft.windows-executable",
+                              ],
+                            ),
                           ],
                         );
 
@@ -841,6 +942,12 @@ class _SettingsPageState extends State<SettingsPage> {
                         context,
                       ).colorScheme.surfaceContainerLowest,
                       trailing: const Icon(Icons.arrow_forward_ios_outlined),
+                      onTap: () => globalSettingsPageTransferKey.currentState
+                          ?.changePageTo(
+                            const ExtensionsManagementPage(
+                              key: ValueKey('extensions'),
+                            ),
+                          ),
                     ),
 
                     const SizedBox(height: 24),
@@ -911,6 +1018,47 @@ class _SettingsPageState extends State<SettingsPage> {
             //   ),
             // ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+class ExtensionsManagementPage extends StatefulWidget {
+  const ExtensionsManagementPage({super.key});
+
+  @override
+  State<ExtensionsManagementPage> createState() =>
+      _ExtensionsManagementPageState();
+}
+
+class _ExtensionsManagementPageState extends State<ExtensionsManagementPage> {
+  @override
+  Widget build(BuildContext context) {
+    return BackdropFilter(
+      filter: UserPreferences.instance.currentSettingsMap["enable_blur"] == true
+          ? ImageFilter.blur(sigmaX: 10, sigmaY: 10)
+          : ImageFilter.blur(sigmaX: 0, sigmaY: 0),
+      child: Scaffold(
+        backgroundColor:
+            UserPreferences
+                    .instance
+                    .currentSettingsMap["scaffold_background_image_url"] ==
+                ""
+            ? Theme.of(context).colorScheme.surface
+            : Theme.of(context).colorScheme.surface.withAlpha(
+                UserPreferences.instance.currentSettingsMap["ui_alpha"],
+              ),
+        appBar: AppBar(
+          backgroundColor: Colors.transparent,
+          surfaceTintColor: Colors.transparent,
+          scrolledUnderElevation: 0,
+          title: const Text("外置模塊"),
+          leading: IconButton(
+            onPressed: () => globalSettingsPageTransferKey.currentState
+                ?.goBackTo(const SettingsPage(key: ValueKey('settings'))),
+            icon: const Icon(Icons.arrow_back),
+          ),
         ),
       ),
     );
