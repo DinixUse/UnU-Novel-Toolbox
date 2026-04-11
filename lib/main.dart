@@ -4,6 +4,7 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:unu_novel_toolbox/converter_page.dart';
+import 'package:unu_novel_toolbox/converters_interface.dart';
 import 'package:window_manager/window_manager.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -160,7 +161,7 @@ class _HomePageState extends State<HomePage>
     const AppTab(
       title: "轉換工具",
       icon: Icons.conveyor_belt,
-      page: ConverterPage(),
+      page: ConvertersPage(),
     ),
     AppTab(
       title: "設定",

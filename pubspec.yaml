@@ -62,6 +62,7 @@ dependencies:
   path_provider: ^2.1.5
   m3e_expandable: ^0.0.1
   charset_converter: ^2.1.1
+  flutter_staggered_grid_view: ^0.4.0
 
 
   fluent_ui: ^4.15.1
@@ -92,6 +93,9 @@ flutter:
   # To add assets to your application, add an assets section, like this:
   assets:
       - assets/img/Cirno.png
+      - assets/img/dinix1.png
+      - assets/img/dinix2.png
+      - assets/img/sbqmyy1.png
   #   - images/a_dot_burr.jpeg
   #   - images/a_dot_ham.jpeg
 
