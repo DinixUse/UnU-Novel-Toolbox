@@ -12,9 +12,24 @@
 
 UnU Novel Toolbox 是一個 Flutter Windows 桌面應用，針對小說下載與解析做優化。主要功能如下：
 
-1) 從刺猬貓（ciweimao）解析書籍目錄與章節列表。
+1) 從刺猬貓（ciweimao）及晉江文學城（jjwxc）解析書籍目錄與章節列表。
 2) 用內建 WebView 模擬使用者操作（頁面加載、點擊展開）取得章節 HTML。
 3) 清理並格式化章節正文，批量寫入 TXT（未來可擴展 EPUB）。
+
+## 💦 熒幕截圖
+
+**歡迎頁面**
+![Welcome](https://github.com/DinixUse/UnU-Novel-Toolbox/blob/main/screenshots/welcome.png)
+
+**小説解析與下載**
+![Jjwxc](https://github.com/DinixUse/UnU-Novel-Toolbox/blob/main/screenshots/jjwxcpv.png)
+![Ciweimao](https://github.com/DinixUse/UnU-Novel-Toolbox/blob/main/screenshots/ciweimaopv.png)
+
+**電子書格式轉換**
+![Ebook Convert](https://github.com/DinixUse/UnU-Novel-Toolbox/blob/main/screenshots/ebookconvert.png)
+
+**設定**
+![Settings](https://github.com/DinixUse/UnU-Novel-Toolbox/blob/main/screenshots/settings.png)
 
 ## 🚀 核心功能
 

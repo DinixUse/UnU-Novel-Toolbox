@@ -242,7 +242,7 @@ ${processedLines.join('\n')}
                         value: Format.mobi,
                       ),
                       DropdownMenuItem<Format>(
-                        child: Text('PDF / HTML'),
+                        child: Text('展開書目'),
                         value: Format.expanded,
                       ),
                       DropdownMenuItem<Format>(
