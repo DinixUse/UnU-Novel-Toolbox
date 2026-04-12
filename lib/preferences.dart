@@ -7,11 +7,36 @@ import 'dart:io';
 class UserPreferences {
   UserPreferences._privateConstructor();
 
-  static final UserPreferences _instance = UserPreferences._privateConstructor();
+  static final UserPreferences _instance =
+      UserPreferences._privateConstructor();
   static UserPreferences get instance => _instance;
 
   final applicationPath = Directory.current.path;
-  final webWebBrowserPath = path.join(Directory.current.path, "modules", "web_web_browser");
+  final webWebBrowserPath = path.join(
+    Directory.current.path,
+    "modules",
+    "web_web_browser",
+  );
+
+  final modulesRootPath = path.join(Directory.current.path, "modules");
+  List<String> modules = [];
+
+  Future<void> loadLocalModules() async {
+    if (!await Directory(modulesRootPath).exists()) {
+      await Directory(modulesRootPath).create(recursive: true);
+    }
+
+    final entities = await Directory(
+      modulesRootPath,
+    ).list(recursive: false).toList();
+
+    modules = entities
+        .where((entity) => entity is Directory)
+        .map((dir) => dir.path.split(Platform.pathSeparator).last)
+        .toList();
+  }
+
+  final String applicationVersion = "Nightly 0.4";
 
   final Map<String, dynamic> defaultSettingsMap = {
     "scaffold_background_image_url": "",
@@ -21,45 +46,59 @@ class UserPreferences {
     "app_color": 4280391411,
     "dynamic_app_color": false,
     "enable_blur": false,
-    "ebook-converter-path":""
+    "ebook-converter-path": "",
   };
 
   Map<String, dynamic> currentSettingsMap = {};
 
-  Future<void> resumeDefaultSettings () async {
-    Directory _settingsJsonDir = Directory(path.join(applicationPath, "appData"));
-    if(!await _settingsJsonDir.exists()) {
+  Future<void> resumeDefaultSettings() async {
+    Directory _settingsJsonDir = Directory(
+      path.join(applicationPath, "appData"),
+    );
+    if (!await _settingsJsonDir.exists()) {
       await _settingsJsonDir.create(recursive: true);
     }
 
-    File _settingsJsonFile = File(path.join(applicationPath, "appData\\settings.json"));
-    await  _settingsJsonFile.writeAsString(jsonEncode(defaultSettingsMap));
+    File _settingsJsonFile = File(
+      path.join(applicationPath, "appData\\settings.json"),
+    );
+    await _settingsJsonFile.writeAsString(jsonEncode(defaultSettingsMap));
   }
 
-  Future<void> saveSettings () async {
-    Directory _settingsJsonDir = Directory(path.join(applicationPath, "appData"));
-    if(!await _settingsJsonDir.exists()) {
+  Future<void> saveSettings() async {
+    Directory _settingsJsonDir = Directory(
+      path.join(applicationPath, "appData"),
+    );
+    if (!await _settingsJsonDir.exists()) {
       await _settingsJsonDir.create(recursive: true);
     }
 
-    File _settingsJsonFile = File(path.join(applicationPath, "appData\\settings.json"));
-    await  _settingsJsonFile.writeAsString(jsonEncode(currentSettingsMap));
+    File _settingsJsonFile = File(
+      path.join(applicationPath, "appData\\settings.json"),
+    );
+    await _settingsJsonFile.writeAsString(jsonEncode(currentSettingsMap));
   }
 
-  Future<void> initializePreferences () async {
-    Directory _settingsJsonDir = Directory(path.join(applicationPath, "appData"));
-    if(!await _settingsJsonDir.exists()) {
+  Future<void> initializePreferences() async {
+    Directory _settingsJsonDir = Directory(
+      path.join(applicationPath, "appData"),
+    );
+    if (!await _settingsJsonDir.exists()) {
       await _settingsJsonDir.create(recursive: true);
     }
 
-    File _settingsJsonFile = File(path.join(applicationPath, "appData\\settings.json"));
-    if(!await _settingsJsonFile.exists()) {
+    File _settingsJsonFile = File(
+      path.join(applicationPath, "appData\\settings.json"),
+    );
+    if (!await _settingsJsonFile.exists()) {
       await _settingsJsonFile.writeAsString(jsonEncode(defaultSettingsMap));
 
       currentSettingsMap = defaultSettingsMap;
-    }else{
+    } else {
       String _settingsString = await _settingsJsonFile.readAsString();
       currentSettingsMap = jsonDecode(_settingsString);
     }
+
+    await loadLocalModules();
   }
 }

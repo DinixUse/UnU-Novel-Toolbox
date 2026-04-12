@@ -702,19 +702,22 @@ class _JjwxcNovelCatalogPageState extends State<JjwxcNovelCatalogPage> {
                   }),
                 ),
               ),
-              IntrinsicWidth(
-                child: RadioListTile<bool>(
-                  shape: const RoundedRectangleBorder(
-                    borderRadius: BorderRadius.all(Radius.circular(128)),
+              if (UserPreferences.instance.modules.contains(
+                "txt_to_epub_maker",
+              ))
+                IntrinsicWidth(
+                  child: RadioListTile<bool>(
+                    shape: const RoundedRectangleBorder(
+                      borderRadius: BorderRadius.all(Radius.circular(128)),
+                    ),
+                    title: const Text("EPUB"),
+                    value: true,
+                    groupValue: _isEpub,
+                    onChanged: (bool? value) => setState(() {
+                      _isEpub = true;
+                    }),
                   ),
-                  title: const Text("EPUB"),
-                  value: true,
-                  groupValue: _isEpub,
-                  onChanged: (bool? value) => setState(() {
-                    _isEpub = true;
-                  }),
                 ),
-              ),
             ],
             const Expanded(child: SizedBox()),
 

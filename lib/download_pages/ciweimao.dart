@@ -305,9 +305,7 @@ class _NovelCatalogPageState extends State<NovelCatalogPage> {
                 final fullUrl = url.startsWith('http')
                     ? url
                     : 'https://www.ciweimao.com$url';
-                currentChapters.add(
-                  NovelChapter(title: title, url: fullUrl),
-                );
+                currentChapters.add(NovelChapter(title: title, url: fullUrl));
               }
             }
           }
@@ -316,10 +314,7 @@ class _NovelCatalogPageState extends State<NovelCatalogPage> {
         // 添加最后一卷
         if (currentChapters.isNotEmpty) {
           volumes.add(
-            NovelVolume(
-              volumeName: currentVolName,
-              chapters: currentChapters,
-            ),
+            NovelVolume(volumeName: currentVolName, chapters: currentChapters),
           );
         }
       }
@@ -343,9 +338,7 @@ class _NovelCatalogPageState extends State<NovelCatalogPage> {
         }
 
         if (allChapters.isNotEmpty) {
-          volumes.add(
-            NovelVolume(volumeName: '全部章節', chapters: allChapters),
-          );
+          volumes.add(NovelVolume(volumeName: '全部章節', chapters: allChapters));
         } else {
           throw Exception('未找到章节链接，可能是反爬限制');
         }
@@ -495,14 +488,14 @@ class _NovelCatalogPageState extends State<NovelCatalogPage> {
     return Scaffold(
       //appBar: AppBar(title: const Text('刺蝟貓小説解析下載工具')),
       backgroundColor: Colors.transparent,
-          // UserPreferences
-          //         .instance
-          //         .currentSettingsMap["scaffold_background_image_url"] ==
-          //     ""
-          // ? Theme.of(context).colorScheme.surface
-          // : Theme.of(context).colorScheme.surface.withAlpha(
-          //     UserPreferences.instance.currentSettingsMap["ui_alpha"],
-          //   ),
+      // UserPreferences
+      //         .instance
+      //         .currentSettingsMap["scaffold_background_image_url"] ==
+      //     ""
+      // ? Theme.of(context).colorScheme.surface
+      // : Theme.of(context).colorScheme.surface.withAlpha(
+      //     UserPreferences.instance.currentSettingsMap["ui_alpha"],
+      //   ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
         child: Column(
@@ -919,24 +912,33 @@ class _NovelCatalogPageState extends State<NovelCatalogPage> {
                   }),
                 ),
               ),
-              IntrinsicWidth(
-                child: RadioListTile<bool>(
-                  shape: const RoundedRectangleBorder(
-                    borderRadius: BorderRadius.all(Radius.circular(128)),
+              if (UserPreferences.instance.modules.contains(
+                "txt_to_epub_maker",
+              ))
+                IntrinsicWidth(
+                  child: RadioListTile<bool>(
+                    shape: const RoundedRectangleBorder(
+                      borderRadius: BorderRadius.all(Radius.circular(128)),
+                    ),
+                    title: const Text("EPUB"),
+                    value: true,
+                    groupValue: _isEpub,
+                    onChanged: (bool? value) => setState(() {
+                      _isEpub = true;
+                    }),
                   ),
-                  title: const Text("EPUB"),
-                  value: true,
-                  groupValue: _isEpub,
-                  onChanged: (bool? value) => setState(() {
-                    _isEpub = true;
-                  }),
                 ),
-              ),
             ],
             const Expanded(child: SizedBox()),
 
             FilledButton(
-              onPressed: _catalogData.isNotEmpty && _isTaskAdded == false && DownloadManager.instance.hasTaskByNovelTitle(_novelTitle) == false
+              onPressed:
+                  _catalogData.isNotEmpty &&
+                      _isTaskAdded == false &&
+                      DownloadManager.instance.hasTaskByNovelTitle(
+                            _novelTitle,
+                          ) ==
+                          false
                   ? () {
                       // final NovelExtractor extractor = NovelExtractor();
                       // bool isInitSuccess = await extractor.initialize();
@@ -969,7 +971,8 @@ class _NovelCatalogPageState extends State<NovelCatalogPage> {
                         novelTitle: _novelTitle,
                         volumes: _catalogData,
                         isEpub: _isEpub,
-                        savePath: "${UserPreferences.instance.currentSettingsMap["download_root_path"]}/$_novelTitle",
+                        savePath:
+                            "${UserPreferences.instance.currentSettingsMap["download_root_path"]}/$_novelTitle",
                       );
 
                       setState(() {

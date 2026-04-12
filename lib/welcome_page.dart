@@ -1,6 +1,10 @@
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import 'package:url_launcher/url_launcher.dart';
+
+import 'preferences.dart';
 
 class WelcomePage extends StatelessWidget {
   const WelcomePage({super.key});
@@ -21,7 +25,9 @@ class WelcomePage extends StatelessWidget {
                   "歡迎",
                   style: TextStyle(fontSize: 24, fontWeight: FontWeight.w400),
                 ),
-                content: const Text("即刻開始處理電子書~\n\n程式版本：Nightly 0.4"),
+                content: Text(
+                  "即刻開始處理電子書~\n\n程式版本：${UserPreferences.instance.applicationVersion}",
+                ),
                 actions: [
                   Image.asset("assets/img/Cirno.png", width: 256, height: 256),
                 ],
@@ -68,9 +74,7 @@ class WelcomePage extends StatelessWidget {
                         height: 36,
                       ),
                       onTap: () {
-                        launchUrl(
-                          Uri.parse("https://github.com/DinixUse"),
-                        );
+                        launchUrl(Uri.parse("https://github.com/DinixUse"));
                       },
                     ),
                     ListTile(
@@ -95,16 +99,16 @@ class WelcomePage extends StatelessWidget {
                         borderRadius: BorderRadius.circular(4),
                       ),
                       title: const Text("Sbqmyy <Github>"),
-                      subtitle: const Text("No, I was just imagining what kind of flower would suit you."),
+                      subtitle: const Text(
+                        "No, I was just imagining what kind of flower would suit you.",
+                      ),
                       leading: Image.asset(
                         "assets/img/sbqmyy1.png",
                         width: 36,
                         height: 36,
                       ),
                       onTap: () {
-                        launchUrl(
-                          Uri.parse("https://github.com/Sbqmyy"),
-                        );
+                        launchUrl(Uri.parse("https://github.com/Sbqmyy"));
                       },
                     ),
                   ],
@@ -181,58 +185,80 @@ class WelcomeCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      shadowColor: Colors.transparent,
-      shape: RoundedRectangleBorder(
-        borderRadius: borderRadius ?? BorderRadius.circular(24),
-      ),
-      color: backgroundColor ?? Theme.of(context).colorScheme.surface,
-      child: Padding(
-        padding: padding ?? const EdgeInsets.all(16),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.start,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            CircleAvatar(
-              backgroundColor:
-                  iconBackgroundColor ??
-                  Theme.of(context).colorScheme.primaryContainer,
-              child: Icon(
-                icon,
-                color:
-                    iconForegroundColor ??
-                    Theme.of(context).colorScheme.onPrimaryContainer,
-              ),
+    int cardAlpha =
+        UserPreferences
+                .instance
+                .currentSettingsMap["scaffold_background_image_url"] ==
+            ""
+        ? 255
+        : UserPreferences.instance.currentSettingsMap["ui_alpha"];
+    return Padding(
+      padding: const EdgeInsets.all(4),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(24),
+        child: BackdropFilter(
+          filter:
+              UserPreferences.instance.currentSettingsMap["enable_blur"] == true
+              ? ImageFilter.blur(sigmaX: 10, sigmaY: 10)
+              : ImageFilter.blur(sigmaX: 0, sigmaY: 0),
+          child: Card(
+            margin: const EdgeInsets.all(0),
+            shadowColor: Colors.transparent,
+            shape: RoundedRectangleBorder(
+              borderRadius: borderRadius ?? BorderRadius.circular(24),
             ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
+            color: backgroundColor == null
+                ? Theme.of(context).colorScheme.surface.withAlpha(cardAlpha)
+                : backgroundColor!.withAlpha(cardAlpha),
+            child: Padding(
+              padding: padding ?? const EdgeInsets.all(16),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.start,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  ListTile(
-                    title: Padding(
-                      padding: const EdgeInsets.only(bottom: 4),
-                      child: title,
+                  CircleAvatar(
+                    backgroundColor:
+                        iconBackgroundColor ??
+                        Theme.of(context).colorScheme.primaryContainer,
+                    child: Icon(
+                      icon,
+                      color:
+                          iconForegroundColor ??
+                          Theme.of(context).colorScheme.onPrimaryContainer,
                     ),
-                    subtitle: content,
-                    contentPadding: EdgeInsets.zero,
-                    minVerticalPadding: 2,
                   ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        ListTile(
+                          title: Padding(
+                            padding: const EdgeInsets.only(bottom: 4),
+                            child: title,
+                          ),
+                          subtitle: content,
+                          contentPadding: EdgeInsets.zero,
+                          minVerticalPadding: 2,
+                        ),
 
-                  if (actions != null && actions!.isNotEmpty) ...[
-                    const Spacer(),
-                    Padding(
-                      padding: const EdgeInsets.all(8),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.end,
-                        children: actions!,
-                      ),
+                        if (actions != null && actions!.isNotEmpty) ...[
+                          const Spacer(),
+                          Padding(
+                            padding: const EdgeInsets.all(8),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.end,
+                              children: actions!,
+                            ),
+                          ),
+                        ],
+                      ],
                     ),
-                  ],
+                  ),
                 ],
               ),
             ),
-          ],
+          ),
         ),
       ),
     );

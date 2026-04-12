@@ -957,14 +957,14 @@ class _SettingsPageState extends State<SettingsPage> {
                       position: TilePosition.single,
                       tileIcon: const Icon(Icons.info),
                       title: const Text("關於軟體"),
-                      subtitle: const Text("Nightly 0.4"),
+                      subtitle: Text(UserPreferences.instance.applicationVersion),
                       tileColor: Theme.of(
                         context,
                       ).colorScheme.surfaceContainerLowest,
                       onTap: () => showAboutDialog(
                         context: context,
                         applicationName: "UnU Novel Toolbox",
-                        applicationVersion: "Nightly 0.4",
+                        applicationVersion: UserPreferences.instance.applicationVersion,
                         applicationIcon: Image.asset(
                           "assets/img/Cirno.png",
                           width: 48,

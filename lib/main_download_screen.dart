@@ -1,10 +1,12 @@
 import 'dart:io';
+import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:unu_novel_toolbox/preferences.dart';
 import 'package:window_manager/window_manager.dart';
 import 'services/download_manager.dart';
 import 'package:progress_indicator_m3e/progress_indicator_m3e.dart';
+import 'package:material_shapes/material_shapes.dart';
 
 import 'preferences.dart';
 
@@ -16,6 +18,46 @@ class MainDownloadScreen extends StatefulWidget {
 }
 
 class _MainDownloadScreenState extends State<MainDownloadScreen> {
+  Widget _randomMaterialShape(BuildContext context) {
+    final color = Theme.of(context).colorScheme.primary;
+    final random = Random();
+
+    final shapes = [
+      MaterialShapes.arch(size: 128, color: color),
+      MaterialShapes.arrow(size: 128, color: color),
+      MaterialShapes.bloom(size: 128, color: color),
+      MaterialShapes.bun(size: 128, color: color),
+      MaterialShapes.burst(size: 128, color: color),
+      MaterialShapes.circle(size: 128, color: color),
+      MaterialShapes.clampShell(size: 128, color: color),
+      MaterialShapes.diamond(size: 128, color: color),
+      MaterialShapes.eightLeafClover(size: 128, color: color),
+      MaterialShapes.fan(size: 128, color: color),
+      MaterialShapes.flower(size: 128, color: color),
+      MaterialShapes.fourLeafClover(size: 128, color: color),
+      MaterialShapes.heart(size: 128, color: color),
+      MaterialShapes.nineSidedCookie(size: 128, color: color),
+      MaterialShapes.oval(size: 128, color: color),
+      MaterialShapes.pentagon(size: 128, color: color),
+      MaterialShapes.pill(size: 128, color: color),
+      MaterialShapes.puffyDiamond(size: 128, color: color),
+      MaterialShapes.pixelCircle(size: 128, color: color),
+      MaterialShapes.pixelTriangle(size: 128, color: color),
+      MaterialShapes.sevenSidedCookie(size: 128, color: color),
+      MaterialShapes.sixSidedCookie(size: 128, color: color),
+      MaterialShapes.slanted(size: 128, color: color),
+      MaterialShapes.softBloom(size: 128, color: color),
+      MaterialShapes.square(size: 128, color: color),
+      MaterialShapes.sunny(size: 128, color: color),
+      MaterialShapes.triangle(size: 128, color: color),
+      MaterialShapes.twelveSidedCookie(size: 128, color: color),
+      MaterialShapes.verySunny(size: 128, color: color),
+    ];
+
+    // 随机取一个
+    return shapes[random.nextInt(shapes.length)];
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -34,178 +76,188 @@ class _MainDownloadScreenState extends State<MainDownloadScreen> {
       ),
       body: Padding(
         padding: const EdgeInsets.all(16),
-        child: ListView.builder(
-          itemBuilder: (context, index) {
-            return ValueListenableBuilder<double>(
-              valueListenable:
-                  DownloadManager.instance.tasks[index].progressNotifier,
-              builder: (context, progress, child) {
-                return Card(
-                  margin: const EdgeInsets.symmetric(vertical: 8),
-                  elevation: 0,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(24),
-                  ),
-                  clipBehavior: Clip.hardEdge, // 防止子组件溢出卡片
-                  child: Padding(
-                    padding: const EdgeInsets.all(18),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.start,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        ClipRRect(
+        child: DownloadManager.instance.tasks.isEmpty
+            ? Container(alignment: Alignment.center, child: _randomMaterialShape(context))
+            : ListView.builder(
+                itemBuilder: (context, index) {
+                  return ValueListenableBuilder<double>(
+                    valueListenable:
+                        DownloadManager.instance.tasks[index].progressNotifier,
+                    builder: (context, progress, child) {
+                      return Card(
+                        margin: const EdgeInsets.symmetric(vertical: 8),
+                        elevation: 0,
+                        shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(24),
-                          child: SizedBox(
-                            width: 100,
-                            height: 145,
-                            child: Image.network(
-                              // 空值校验：防止 URL 为空导致崩溃
-                              DownloadManager.instance.tasks[index]?.coverUrl ??
-                                  '',
-                              fit: BoxFit.cover,
-                              // 加载中占位
-                              loadingBuilder:
-                                  (context, child, loadingProgress) {
-                                    if (loadingProgress == null) return child;
-                                    return const Center(
-                                      child: CircularProgressIndicator(
-                                        strokeWidth: 2,
-                                      ),
-                                    );
-                                  },
-                              // 加载失败占位
-                              errorBuilder: (context, error, stackTrace) {
-                                return Container(
-                                  color: Colors.grey[200],
-                                  child: const Icon(
-                                    Icons.broken_image,
-                                    color: Colors.grey,
-                                    size: 40,
-                                  ),
-                                );
-                              },
-                            ),
-                          ),
                         ),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: Column(
+                        clipBehavior: Clip.hardEdge, // 防止子组件溢出卡片
+                        child: Padding(
+                          padding: const EdgeInsets.all(18),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.start,
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              // 优化：文本过长省略，增加样式
-                              Row(
-                                children: [
-                                  Text(
+                              ClipRRect(
+                                borderRadius: BorderRadius.circular(24),
+                                child: SizedBox(
+                                  width: 100,
+                                  height: 145,
+                                  child: Image.network(
+                                    // 空值校验：防止 URL 为空导致崩溃
                                     DownloadManager
                                             .instance
                                             .tasks[index]
-                                            ?.novelTitle ??
-                                        '未知标题',
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: const TextStyle(
-                                      fontSize: 18,
-                                      fontWeight: FontWeight.w500,
-                                    ),
+                                            ?.coverUrl ??
+                                        '',
+                                    fit: BoxFit.cover,
+                                    // 加载中占位
+                                    loadingBuilder:
+                                        (context, child, loadingProgress) {
+                                          if (loadingProgress == null)
+                                            return child;
+                                          return const Center(
+                                            child: CircularProgressIndicator(
+                                              strokeWidth: 2,
+                                            ),
+                                          );
+                                        },
+                                    // 加载失败占位
+                                    errorBuilder: (context, error, stackTrace) {
+                                      return Container(
+                                        color: Colors.grey[200],
+                                        child: const Icon(
+                                          Icons.broken_image,
+                                          color: Colors.grey,
+                                          size: 40,
+                                        ),
+                                      );
+                                    },
                                   ),
-                                  Text(
-                                    DownloadManager
-                                        .instance
-                                        .tasks[index]
-                                        .taskType
-                                        .name
-                                        .toUpperCase(),
-                                    style: TextStyle(
-                                      fontSize: 12,
-                                      color: Theme.of(
-                                        context,
-                                      ).colorScheme.primary,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                DownloadManager
-                                        .instance
-                                        .tasks[index]
-                                        ?.novelAuthor ??
-                                    '未知作者',
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  color: Colors.grey[600],
                                 ),
                               ),
-
-                              const SizedBox(height: 8),
-
-                              SizedBox(
-                                height: 8, // 设置进度条高度
-                                child: LinearProgressIndicatorM3E(
-                                  size: LinearProgressM3ESize.s,
-                                  value: progress ?? 0.0, // 空值校验
-                                ),
-                              ),
-                              const SizedBox(height: 6),
-
-                              Row(
-                                children: [
-                                  Text(
-                                    '${((progress ?? 0.0) * 100).toStringAsFixed(1)}%',
-                                    style: TextStyle(
-                                      fontSize: 14,
-                                      color: Colors.grey[600],
-                                    ),
-                                  ),
-                                  Text(
-                                    DownloadManager.instance.tasks[index].isEpub
-                                        ? " · EPUB"
-                                        : " · TXT",
-                                    style: TextStyle(
-                                      fontSize: 14,
-                                      color: Colors.grey[400],
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 16),
-                              if (progress < 1.0)
-                                Row(
-                                  mainAxisAlignment: MainAxisAlignment.end,
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    OutlinedButton(
-                                      onPressed: () async {
-                                        await DownloadManager.instance
-                                            .cancelDownloadTask(
-                                              taskId:
-                                                  DownloadManager
-                                                      .instance
-                                                      .tasks[index]
-                                                      ?.taskId ??
-                                                  '',
-                                              deleteFiles: false,
-                                            );
-
-                                        setState(() {});
-                                      },
-                                      child: const Text("取消"),
+                                    // 优化：文本过长省略，增加样式
+                                    Row(
+                                      children: [
+                                        Text(
+                                          DownloadManager
+                                                  .instance
+                                                  .tasks[index]
+                                                  ?.novelTitle ??
+                                              '未知标题',
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: const TextStyle(
+                                            fontSize: 18,
+                                            fontWeight: FontWeight.w500,
+                                          ),
+                                        ),
+                                        Text(
+                                          DownloadManager
+                                              .instance
+                                              .tasks[index]
+                                              .taskType
+                                              .name
+                                              .toUpperCase(),
+                                          style: TextStyle(
+                                            fontSize: 12,
+                                            color: Theme.of(
+                                              context,
+                                            ).colorScheme.primary,
+                                          ),
+                                        ),
+                                      ],
                                     ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      DownloadManager
+                                              .instance
+                                              .tasks[index]
+                                              ?.novelAuthor ??
+                                          '未知作者',
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: TextStyle(
+                                        fontSize: 16,
+                                        color: Colors.grey[600],
+                                      ),
+                                    ),
+
+                                    const SizedBox(height: 8),
+
+                                    SizedBox(
+                                      height: 8, // 设置进度条高度
+                                      child: LinearProgressIndicatorM3E(
+                                        size: LinearProgressM3ESize.s,
+                                        value: progress ?? 0.0, // 空值校验
+                                      ),
+                                    ),
+                                    const SizedBox(height: 6),
+
+                                    Row(
+                                      children: [
+                                        Text(
+                                          '${((progress ?? 0.0) * 100).toStringAsFixed(1)}%',
+                                          style: TextStyle(
+                                            fontSize: 14,
+                                            color: Colors.grey[600],
+                                          ),
+                                        ),
+                                        Text(
+                                          DownloadManager
+                                                  .instance
+                                                  .tasks[index]
+                                                  .isEpub
+                                              ? " · EPUB"
+                                              : " · TXT",
+                                          style: TextStyle(
+                                            fontSize: 14,
+                                            color: Colors.grey[400],
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 16),
+                                    if (progress < 1.0)
+                                      Row(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.end,
+                                        children: [
+                                          OutlinedButton(
+                                            onPressed: () async {
+                                              await DownloadManager.instance
+                                                  .cancelDownloadTask(
+                                                    taskId:
+                                                        DownloadManager
+                                                            .instance
+                                                            .tasks[index]
+                                                            ?.taskId ??
+                                                        '',
+                                                    deleteFiles: false,
+                                                  );
+
+                                              setState(() {});
+                                            },
+                                            child: const Text("取消"),
+                                          ),
+                                        ],
+                                      ),
                                   ],
                                 ),
+                              ),
                             ],
                           ),
                         ),
-                      ],
-                    ),
-                  ),
-                );
-              },
-            );
-          },
-          itemCount: DownloadManager.instance.tasks.length,
-        ),
+                      );
+                    },
+                  );
+                },
+                itemCount: DownloadManager.instance.tasks.length,
+              ),
       ),
       floatingActionButton: FloatingActionButton.extended(
         icon: const Icon(Icons.folder),
