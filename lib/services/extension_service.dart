@@ -10,9 +10,8 @@ class ExtensionService {
   static ExtensionService get instance => _instance;
 
   final Map<String, String> extensionSources = {
-    "github.com": "https://github.com",
-    "gh-proxy.org": "https://gh-proxy.org/https://github.com",
-
+    "Github": "https://raw.githubusercontent.com",
+    "Gh-Proxy": "https://gh-proxy.org/https://raw.githubusercontent.com"
   };
 
   Future<dynamic> fetchExtensionFromSource(String source) async {
@@ -20,17 +19,17 @@ class ExtensionService {
       throw Exception("Unsupported extension source: $source");
     }
 
-    String url = extensionSources[source]! + "/Sbqmyy/UnU-Novel-Toolbox-Extensions/blob/main/repo.json";
+    String url = "${extensionSources[source]!}/Sbqmyy/UnU-Novel-Toolbox-Extensions/refs/heads/main/repo.json";
 
     try {
       final response = await http.get(Uri.parse(url));
       if (response.statusCode == 200) {
         return jsonDecode(response.body);
       } else {
-        throw Exception("Failed to load extensions from $source");
+        return response.body;
       }
     } catch (e) {
-      throw Exception("Error fetching extensions from $source: $e");
+      return "$e";
     }
   }
 }

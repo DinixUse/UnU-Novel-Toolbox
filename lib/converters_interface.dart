@@ -16,7 +16,9 @@ class _ConvertersPageState extends State<ConvertersPage>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
 
-  final List<String> _tabTitles = ['Ebook Convert', 'Txt To Epub'];
+  final List<String> _tabTitles = ['Ebook Convert', UserPreferences.instance.modules.contains(
+                "txt_to_epub_maker",
+              ) ? 'Txt To Epub' : null].whereType<String>().toList();
 
   @override
   void initState() {

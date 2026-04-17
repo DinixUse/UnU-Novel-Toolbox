@@ -4,6 +4,7 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:unu_novel_toolbox/converter_page.dart';
+import 'package:unu_novel_toolbox/services/extension_service.dart';
 import 'package:unu_novel_toolbox/converters_interface.dart';
 import 'package:window_manager/window_manager.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -957,14 +958,17 @@ class _SettingsPageState extends State<SettingsPage> {
                       position: TilePosition.single,
                       tileIcon: const Icon(Icons.info),
                       title: const Text("關於軟體"),
-                      subtitle: Text(UserPreferences.instance.applicationVersion),
+                      subtitle: Text(
+                        UserPreferences.instance.applicationVersion,
+                      ),
                       tileColor: Theme.of(
                         context,
                       ).colorScheme.surfaceContainerLowest,
                       onTap: () => showAboutDialog(
                         context: context,
                         applicationName: "UnU Novel Toolbox",
-                        applicationVersion: UserPreferences.instance.applicationVersion,
+                        applicationVersion:
+                            UserPreferences.instance.applicationVersion,
                         applicationIcon: Image.asset(
                           "assets/img/Cirno.png",
                           width: 48,
@@ -1033,9 +1037,27 @@ class ExtensionsManagementPage extends StatefulWidget {
       _ExtensionsManagementPageState();
 }
 
-class _ExtensionsManagementPageState extends State<ExtensionsManagementPage> {
+class _ExtensionsManagementPageState extends State<ExtensionsManagementPage>
+    with SingleTickerProviderStateMixin {
+  late TabController _tabController;
+
+  final List<String> _tabTitles = ['在綫', '已裝載'];
+
+  @override
+  void initState() {
+    super.initState();
+    _tabController = TabController(length: _tabTitles.length, vsync: this);
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
+    // _refreshExtensions();
     return BackdropFilter(
       filter: UserPreferences.instance.currentSettingsMap["enable_blur"] == true
           ? ImageFilter.blur(sigmaX: 10, sigmaY: 10)
@@ -1060,8 +1082,192 @@ class _ExtensionsManagementPageState extends State<ExtensionsManagementPage> {
                 ?.goBackTo(const SettingsPage(key: ValueKey('settings'))),
             icon: const Icon(Icons.arrow_back),
           ),
+          bottom: TabBar(
+            controller: _tabController,
+            isScrollable: true,
+            tabs: _tabTitles.map((title) => Tab(text: title)).toList(),
+          ),
+        ),
+        body: TabBarView(
+          controller: _tabController,
+          children: _tabTitles.map((title) {
+            switch (title) {
+              case '在綫':
+                return const OnlineExtensions();
+              case '已裝載':
+                return const Placeholder();
+              default:
+                return Center(child: Text('未知的頁面：$title'));
+            }
+          }).toList(),
         ),
       ),
+    );
+  }
+}
+
+class OnlineExtensions extends StatefulWidget {
+  const OnlineExtensions({super.key});
+
+  @override
+  State<OnlineExtensions> createState() => _OnlineExtensionsState();
+}
+
+class _OnlineExtensionsState extends State<OnlineExtensions> {
+  TextEditingController searchController = TextEditingController();
+  String _selectedSource = "Github";
+
+  bool _isLoading = false;
+  List<dynamic> extensions = [];
+
+  Future<void> _refreshExtensions() async {
+    setState(() {
+      _isLoading = true;
+    });
+
+    print(_selectedSource);
+
+    final _result = await ExtensionService.instance.fetchExtensionFromSource(
+      _selectedSource,
+    );
+    if (_result is String) {
+      print(_result);
+    } else if (_result is List<dynamic>) {
+      print("Fetched ${_result.length} extensions:");
+      for (var ext in _result) {
+        print("- ${ext['name']} (version: ${ext['version']}) ${ext['url']}");
+      }
+    } else {
+      print("Unexpected result type: ${_result.runtimeType}");
+    }
+
+    setState(() {
+      extensions = _result is List<dynamic> ? _result : [];
+      _isLoading = false;
+    });
+  }
+
+  @override
+  void initState() {
+    super.initState();
+
+    _refreshExtensions();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.transparent,
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        surfaceTintColor: Colors.transparent,
+        scrolledUnderElevation: 0,
+        title: Row(
+          children: [
+            Expanded(
+              child: TextField(
+                controller: searchController,
+                decoration: InputDecoration(
+                  hintText: "尋找在綫倉庫",
+                  border: const OutlineInputBorder(
+                    borderRadius: BorderRadius.all(Radius.circular(128)),
+                  ),
+                  prefixIcon: const Icon(Icons.search),
+                  suffixIcon: IconButton(
+                    icon: const Icon(Icons.clear),
+                    onPressed: () => searchController.clear(),
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(width: 4),
+            SizedBox(
+              height: 48,
+              child: DropdownButton<String>(
+                dropdownColor: Theme.of(context).colorScheme.surfaceContainer,
+                underline: const SizedBox(),
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                borderRadius: BorderRadius.circular(24),
+                items: const [
+                  DropdownMenuItem<String>(
+                    child: Text('Github'),
+                    value: 'Github',
+                  ),
+                  DropdownMenuItem<String>(
+                    child: Text('Gh-Proxy'),
+                    value: 'Gh-Proxy',
+                  ),
+                ],
+                onChanged: (String? source) {
+                  setState(() {
+                    _selectedSource = source ?? _selectedSource;
+                    _refreshExtensions();
+                  });
+                },
+                value: _selectedSource,
+              ),
+            ),
+            const SizedBox(width: 4),
+            SizedBox(
+              height: 48,
+              width: 160,
+              child: FilledButton(
+                onPressed: _isLoading ? null : () {},
+                child: const Text("搜索", style: TextStyle(fontSize: 18)),
+                style: FilledButton.styleFrom(
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(128),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+      body: _isLoading
+          ? const Center(child: ExpressiveLoadingIndicator(contained: true))
+          : extensions.isEmpty
+          ? const Center(child: Text("沒有找到擴展"))
+          : ListView.builder(
+              itemCount: extensions.length,
+              itemBuilder: (context, index) {
+                var ext = extensions[index];
+                return Padding(
+                  padding: EdgeInsets.only(
+                    top: index == 0 ? 16 : 1,
+                    bottom: 1,
+                    left: 16,
+                    right: 16,
+                  ),
+                  child: ListTile(
+                    tileColor: Theme.of(context).colorScheme.surfaceContainerLowest.withAlpha(
+                      UserPreferences
+                                  .instance
+                                  .currentSettingsMap["scaffold_background_image_url"] ==
+                              ""
+                          ? 255
+                          : UserPreferences.instance.currentSettingsMap["ui_alpha"],
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.only(
+                        topLeft: Radius.circular(index == 0 ? 24 : 4),
+                        topRight: Radius.circular(index == 0 ? 24 : 4),
+                        bottomLeft: Radius.circular(index == extensions.length - 1 ? 24 : 4),
+                        bottomRight: Radius.circular(index == extensions.length - 1 ? 24 : 4),
+                      ),
+                    ),
+                    title: Text(ext['name'] ?? '未知擴展'),
+                    subtitle: Text(
+                      '${ext['version'] ?? '未知'} · ${ext['description'] ?? ''}',
+                    ),
+                    trailing: const Icon(Icons.download),
+                    onTap: () {
+                      // Handle tap event
+                    },
+                  ),
+                );
+              },
+            ),
     );
   }
 }

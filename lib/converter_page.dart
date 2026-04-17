@@ -192,8 +192,19 @@ ${processedLines.join('\n')}
                         builder: (context) {
                           _closeDialogFunction = () =>
                               Navigator.of(context).pop();
-                          return const Center(
-                            child: ExpressiveLoadingIndicator(contained: true),
+                          return BackdropFilter(
+                            filter:
+                                UserPreferences
+                                        .instance
+                                        .currentSettingsMap["enable_blur"] ==
+                                    true
+                                ? ImageFilter.blur(sigmaX: 3, sigmaY: 3)
+                                : ImageFilter.blur(sigmaX: 0, sigmaY: 0),
+                            child: const Center(
+                              child: ExpressiveLoadingIndicator(
+                                contained: true,
+                              ),
+                            ),
                           );
                         },
                       );
@@ -275,8 +286,19 @@ ${processedLines.join('\n')}
                         builder: (context) {
                           _closeDialogFunction = () =>
                               Navigator.of(context).pop();
-                          return const Center(
-                            child: ExpressiveLoadingIndicator(contained: true),
+                          return BackdropFilter(
+                            filter:
+                                UserPreferences
+                                        .instance
+                                        .currentSettingsMap["enable_blur"] ==
+                                    true
+                                ? ImageFilter.blur(sigmaX: 3, sigmaY: 3)
+                                : ImageFilter.blur(sigmaX: 0, sigmaY: 0),
+                            child: const Center(
+                              child: ExpressiveLoadingIndicator(
+                                contained: true,
+                              ),
+                            ),
                           );
                         },
                       );
@@ -375,9 +397,24 @@ ${processedLines.join('\n')}
                                   builder: (context) {
                                     _closeDialogFunction = () =>
                                         Navigator.of(context).pop();
-                                    return const Center(
-                                      child: ExpressiveLoadingIndicator(
-                                        contained: true,
+                                    return BackdropFilter(
+                                      filter:
+                                          UserPreferences
+                                                  .instance
+                                                  .currentSettingsMap["enable_blur"] ==
+                                              true
+                                          ? ImageFilter.blur(
+                                              sigmaX: 3,
+                                              sigmaY: 3,
+                                            )
+                                          : ImageFilter.blur(
+                                              sigmaX: 0,
+                                              sigmaY: 0,
+                                            ),
+                                      child: const Center(
+                                        child: ExpressiveLoadingIndicator(
+                                          contained: true,
+                                        ),
                                       ),
                                     );
                                   },
