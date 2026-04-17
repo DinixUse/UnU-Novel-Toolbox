@@ -64,6 +64,8 @@ class _ConverterPageState extends State<ConverterPage> {
   TextEditingController _volumeDetectRule = TextEditingController();
   TextEditingController _chapterDetectRule = TextEditingController();
 
+  TextEditingController _extraEndLineCount = TextEditingController();
+
   List<String> processOutputs = [];
 
   Future<void> _processToFormattedHtml(
@@ -487,7 +489,7 @@ ${processedLines.join('\n')}
                           tileColor: Theme.of(
                             context,
                           ).colorScheme.surfaceContainer,
-                          position: TilePosition.single,
+                          position: TilePosition.first,
                           title: Row(
                             crossAxisAlignment: CrossAxisAlignment.center,
                             children: [
@@ -590,6 +592,18 @@ ${processedLines.join('\n')}
                             ],
                           ),
                         ),
+                        SettingsTile(
+                          tileColor: Theme.of(
+                            context,
+                          ).colorScheme.surfaceContainer,
+                          position: TilePosition.last,
+                          title: TextField(
+                            controller: _extraEndLineCount,
+                            decoration: const InputDecoration(
+                              labelText: "額外的換行數目（留空則為0）",
+                            ),
+                          ),
+                        ),
                       ],
                     ),
                   ],
@@ -629,65 +643,82 @@ ${processedLines.join('\n')}
                             );
 
                             String _targetOriginFilePath = _ebookFile!.path;
-                            String _ebookString = await _ebookFile!
-                                .readAsString(encoding: utf8);
-                            String _result = _ebookString;
+                            if (_ebookFile!.name.toLowerCase().endsWith(
+                              '.txt',
+                            )) {
+                              String _ebookString = await _ebookFile!
+                                  .readAsString(encoding: utf8);
+                              String _result = _ebookString;
 
-                            print(_ebookString.substring(0, 918));
+                              print(_ebookString.substring(0, 918));
 
-                            // 1. Apply Text Replacements (Regex)
-                            if (_volumeDetectRule.text != "") {
-                              try {
-                                final RegExp volumeRegex = RegExp(
-                                  _volumeDetectRule.text,
+                              if (_extraEndLineCount.text != "" &&
+                                  _extraEndLineCount.text != "0") {
+                                int extraLines =
+                                    int.tryParse(_extraEndLineCount.text) ?? 0;
+
+                                _result = _ebookString.replaceAll(
+                                  '\n',
+                                  '\n' * (extraLines + 1),
                                 );
-                                _result = _result.replaceAllMapped(
-                                  volumeRegex,
-                                  (match) => "<h1>${match.group(1)}</h1>",
-                                );
-                              } catch (e) {
-                                print("Regex Error for Volume Rule: $e");
                               }
-                            }
 
-                            if (_chapterDetectRule.text != "") {
-                              try {
-                                final RegExp chapterRegex = RegExp(
-                                  _chapterDetectRule.text,
-                                );
-                                _result = _result.replaceAllMapped(
-                                  chapterRegex,
-                                  (match) => "<h2>${match.group(1)}</h2>",
-                                );
-                              } catch (e) {
-                                print("Regex Error for Chapter Rule: $e");
+                              print(_result.substring(0, 918));
+
+                              // 1. Apply Text Replacements (Regex)
+                              if (_volumeDetectRule.text != "") {
+                                try {
+                                  final RegExp volumeRegex = RegExp(
+                                    _volumeDetectRule.text,
+                                  );
+                                  _result = _result.replaceAllMapped(
+                                    volumeRegex,
+                                    (match) => "<h1>${match.group(1)}</h1>",
+                                  );
+                                } catch (e) {
+                                  print("Regex Error for Volume Rule: $e");
+                                }
                               }
-                            }
 
-                            // 2. Write to temp file if changes were made
+                              if (_chapterDetectRule.text != "") {
+                                try {
+                                  final RegExp chapterRegex = RegExp(
+                                    _chapterDetectRule.text,
+                                  );
+                                  _result = _result.replaceAllMapped(
+                                    chapterRegex,
+                                    (match) => "<h2>${match.group(1)}</h2>",
+                                  );
+                                } catch (e) {
+                                  print("Regex Error for Chapter Rule: $e");
+                                }
+                              }
 
-                            final tempDir = await getTemporaryDirectory();
+                              // 2. Write to temp file if changes were made
 
-                            if (_result != _ebookString) {
-                              final tempFile = File(
-                                p.join(tempDir.path, 'processed_ebook.txt'),
+                              final tempDir = await getTemporaryDirectory();
+
+                              if (_result != _ebookString) {
+                                final tempFile = File(
+                                  p.join(tempDir.path, 'processed_ebook.txt'),
+                                );
+                                await tempFile.writeAsString(_result);
+                                _targetOriginFilePath = tempFile.path;
+                              }
+
+                              await _processToFormattedHtml(
+                                _targetOriginFilePath,
+                                p.join(tempDir.path, 'processed_ebook.html'),
+                                _bookTitle.text != ""
+                                    ? _bookTitle.text
+                                    : "Untitled",
                               );
-                              await tempFile.writeAsString(_result);
-                              _targetOriginFilePath = tempFile.path;
+
+                              _targetOriginFilePath = p.join(
+                                tempDir.path,
+                                'processed_ebook.html',
+                              );
                             }
-
-                            await _processToFormattedHtml(
-                              _targetOriginFilePath,
-                              p.join(tempDir.path, 'processed_ebook.html'),
-                              _bookTitle.text != ""
-                                  ? _bookTitle.text
-                                  : "Untitled",
-                            );
-
-                            _targetOriginFilePath = p.join(
-                              tempDir.path,
-                              'processed_ebook.html',
-                            );
 
                             // 3. Build Output Path
                             String extension;
