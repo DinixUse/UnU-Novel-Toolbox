@@ -1,0 +1,14 @@
+[
+    {
+        "name": "example-extension",
+        "version": "1.0.0",
+        "description": "An example extension for demonstration purposes.",
+        "url": "https://github.com/example/example-extension/releases/download/v1.0.0/example-extension.exe"
+    },
+    {
+        "name": "txt-to-epub-maker",
+        "version": "0.1.0",
+        "description": "TxtToEpubMaker v0.1.0 第一个可用的版本，仅支持from谓词。",
+        "url": "https://github.com/QinBuRua/TxtToEpubMaker/releases/download/v0.1.0/TxtToEpubMaker_win.x64.exe"
+    }
+]
