@@ -36,7 +36,7 @@ class UserPreferences {
         .toList();
   }
 
-  final String applicationVersion = "Nightly 0.4";
+  final String applicationVersion = "Nightly 0.5";
 
   final Map<String, dynamic> defaultSettingsMap = {
     "scaffold_background_image_url": "",

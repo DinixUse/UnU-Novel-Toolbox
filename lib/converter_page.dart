@@ -4,6 +4,7 @@ import 'dart:typed_data';
 import 'dart:ui';
 
 import 'package:file_selector/file_selector.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
@@ -66,6 +67,8 @@ class _ConverterPageState extends State<ConverterPage> {
 
   TextEditingController _extraEndLineCount = TextEditingController();
 
+  final ValueNotifier<String> _processOutput = ValueNotifier<String>("");
+
   List<String> processOutputs = [];
 
   Future<void> _processToFormattedHtml(
@@ -82,8 +85,8 @@ class _ConverterPageState extends State<ConverterPage> {
       List<String> processedLines = [];
 
       for (String line in lines) {
-        String trimmedLine = line.trim();
-        if (trimmedLine.isEmpty) continue;
+        String trimmedLine = line;
+        // if (trimmedLine.isEmpty) continue;
 
         bool isHtmlTagLine =
             trimmedLine.startsWith('<') && trimmedLine.endsWith('>');
@@ -131,8 +134,15 @@ ${processedLines.join('\n')}
       _chapterDetectRule.text = "";
       _bookCoverUri = null;
       _selectedOp = Ops.none;
+      _extraEndLineCount.text = "";
       processOutputs.clear();
     });
+  }
+
+  @override
+  void dispose() {
+    _processOutput.dispose();
+    super.dispose();
   }
 
   @override
@@ -634,9 +644,42 @@ ${processedLines.join('\n')}
                               builder: (context) {
                                 _closeDialogFunction = () =>
                                     Navigator.of(context).pop();
-                                return const Center(
-                                  child: ExpressiveLoadingIndicator(
-                                    contained: true,
+                                return BackdropFilter(
+                                  filter:
+                                      UserPreferences
+                                              .instance
+                                              .currentSettingsMap["enable_blur"] ==
+                                          true
+                                      ? ImageFilter.blur(sigmaX: 3, sigmaY: 3)
+                                      : ImageFilter.blur(sigmaX: 0, sigmaY: 0),
+                                  child: Stack(
+                                    children: [
+                                      const Center(
+                                        child: ExpressiveLoadingIndicator(
+                                          contained: true,
+                                        ),
+                                      ),
+
+                                      Center(
+                                        child: Column(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            const SizedBox(height: 128),
+                                            ValueListenableBuilder(
+                                              valueListenable: _processOutput,
+                                              builder: (context, value, child) {
+                                                return Text(
+                                                  value,
+                                                  style: const TextStyle(
+                                                    color: Colors.white,
+                                                  ),
+                                                );
+                                              },
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ],
                                   ),
                                 );
                               },
@@ -800,6 +843,7 @@ ${processedLines.join('\n')}
                               process.stdout.listen((out) {
                                 print(utf8.decode(out));
                                 processOutputs.add(utf8.decode(out));
+                                _processOutput.value = utf8.decode(out);
                               });
 
                               // Listen to stderr (Crucial for debugging errors)
@@ -812,25 +856,49 @@ ${processedLines.join('\n')}
                                 if (_closeDialogFunction != null) {
                                   _closeDialogFunction!();
                                 }
+                                String outputFolderPath = _outputFilePath!;
+
                                 _clearState();
 
                                 if (code == 0) {
                                   showDialog(
                                     context: context,
                                     builder: (context) {
-                                      return AlertDialog(
-                                        title: const Text("Success"),
-                                        content: const Text(
-                                          "Ebook converted successfully!",
+                                      return BackdropFilter(
+                                        filter:
+                                            UserPreferences
+                                                    .instance
+                                                    .currentSettingsMap["enable_blur"] ==
+                                                true
+                                            ? ImageFilter.blur(
+                                                sigmaX: 3,
+                                                sigmaY: 3,
+                                              )
+                                            : ImageFilter.blur(
+                                                sigmaX: 0,
+                                                sigmaY: 0,
+                                              ),
+                                        child: AlertDialog(
+                                          title: const Text("成功！"),
+                                          content: const Text("電子書已成功轉換~"),
+                                          actions: [
+                                            OutlinedButton(
+                                              onPressed: () {
+                                                Navigator.of(context).pop();
+                                                Process.run('explorer.exe', [
+                                                  p.dirname(outputFolderPath),
+                                                ]);
+                                              },
+                                              child: const Text("打開輸出資料夾"),
+                                            ),
+                                            FilledButton(
+                                              child: const Text("OK"),
+                                              onPressed: () {
+                                                Navigator.of(context).pop();
+                                              },
+                                            ),
+                                          ],
                                         ),
-                                        actions: [
-                                          OutlinedButton(
-                                            child: const Text("OK"),
-                                            onPressed: () {
-                                              Navigator.of(context).pop();
-                                            },
-                                          ),
-                                        ],
                                       );
                                     },
                                   );
@@ -838,38 +906,55 @@ ${processedLines.join('\n')}
                                   showDialog(
                                     context: context,
                                     builder: (context) {
-                                      return AlertDialog(
-                                        title: const Text("Error"),
-                                        content: Column(
-                                          mainAxisSize: MainAxisSize.min,
-                                          children: [
-                                            const Text(
-                                              "Ebook conversion failed. Process output:",
-                                            ),
-                                            const SizedBox(height: 12),
-                                            Container(
-                                              padding: const EdgeInsets.all(8),
-                                              color: Colors.grey[200],
-                                              child: SingleChildScrollView(
-                                                child: SelectableText(
-                                                  processOutputs.join('\n'),
-                                                  style: const TextStyle(
-                                                    fontFamily: 'Consolas',
-                                                    fontSize: 12,
+                                      return BackdropFilter(
+                                        filter:
+                                            UserPreferences
+                                                    .instance
+                                                    .currentSettingsMap["enable_blur"] ==
+                                                true
+                                            ? ImageFilter.blur(
+                                                sigmaX: 3,
+                                                sigmaY: 3,
+                                              )
+                                            : ImageFilter.blur(
+                                                sigmaX: 0,
+                                                sigmaY: 0,
+                                              ),
+                                        child: AlertDialog(
+                                          title: const Text("Error"),
+                                          content: Column(
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              const Text(
+                                                "Ebook conversion failed. Process output:",
+                                              ),
+                                              const SizedBox(height: 12),
+                                              Container(
+                                                padding: const EdgeInsets.all(
+                                                  8,
+                                                ),
+                                                color: Colors.grey[200],
+                                                child: SingleChildScrollView(
+                                                  child: SelectableText(
+                                                    processOutputs.join('\n'),
+                                                    style: const TextStyle(
+                                                      fontFamily: 'Consolas',
+                                                      fontSize: 12,
+                                                    ),
                                                   ),
                                                 ),
                                               ),
+                                            ],
+                                          ),
+                                          actions: [
+                                            OutlinedButton(
+                                              child: const Text("OK"),
+                                              onPressed: () {
+                                                Navigator.of(context).pop();
+                                              },
                                             ),
                                           ],
                                         ),
-                                        actions: [
-                                          OutlinedButton(
-                                            child: const Text("OK"),
-                                            onPressed: () {
-                                              Navigator.of(context).pop();
-                                            },
-                                          ),
-                                        ],
                                       );
                                     },
                                   );

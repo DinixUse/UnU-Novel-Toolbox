@@ -847,9 +847,18 @@ class _SettingsPageState extends State<SettingsPage> {
                           builder: (context) {
                             _closeDialogFunction = () =>
                                 Navigator.of(context).pop();
-                            return const Center(
-                              child: ExpressiveLoadingIndicator(
-                                contained: true,
+                            return BackdropFilter(
+                              filter:
+                                  UserPreferences
+                                          .instance
+                                          .currentSettingsMap["enable_blur"] ==
+                                      true
+                                  ? ImageFilter.blur(sigmaX: 3, sigmaY: 3)
+                                  : ImageFilter.blur(sigmaX: 0, sigmaY: 0),
+                              child: const Center(
+                                child: ExpressiveLoadingIndicator(
+                                  contained: true,
+                                ),
                               ),
                             );
                           },
@@ -900,9 +909,18 @@ class _SettingsPageState extends State<SettingsPage> {
                           builder: (context) {
                             _closeDialogFunction = () =>
                                 Navigator.of(context).pop();
-                            return const Center(
-                              child: ExpressiveLoadingIndicator(
-                                contained: true,
+                            return BackdropFilter(
+                              filter:
+                                  UserPreferences
+                                          .instance
+                                          .currentSettingsMap["enable_blur"] ==
+                                      true
+                                  ? ImageFilter.blur(sigmaX: 3, sigmaY: 3)
+                                  : ImageFilter.blur(sigmaX: 0, sigmaY: 0),
+                              child: const Center(
+                                child: ExpressiveLoadingIndicator(
+                                  contained: true,
+                                ),
                               ),
                             );
                           },
@@ -964,47 +982,60 @@ class _SettingsPageState extends State<SettingsPage> {
                       tileColor: Theme.of(
                         context,
                       ).colorScheme.surfaceContainerLowest,
-                      onTap: () => showAboutDialog(
+                      onTap: () => showDialog(
                         context: context,
-                        applicationName: "UnU Novel Toolbox",
-                        applicationVersion:
-                            UserPreferences.instance.applicationVersion,
-                        applicationIcon: Image.asset(
-                          "assets/img/Cirno.png",
-                          width: 48,
-                          height: 48,
-                        ),
-                        children: [
-                          const Text("一款基於Flutter的輕量級小說下載與管理工具。"),
-                          const SizedBox(height: 24),
-                          const SettingsHeader(title: "關注我們"),
-                          SettingsTile(
-                            position: TilePosition.first,
-                            tileIcon: const Icon(Icons.movie),
-                            title: const Text("Dinix(UnU) - Bilibili"),
-                            tileColor: Theme.of(
-                              context,
-                            ).colorScheme.surfaceContainerLowest,
-                            onTap: () => launchUrl(
-                              Uri.parse(
-                                "https://space.bilibili.com/1865480050",
+                        builder: (context) {
+                          return BackdropFilter(
+                            filter:
+                                UserPreferences
+                                        .instance
+                                        .currentSettingsMap["enable_blur"] ==
+                                    true
+                                ? ImageFilter.blur(sigmaX: 3, sigmaY: 3)
+                                : ImageFilter.blur(sigmaX: 0, sigmaY: 0),
+                            child: AboutDialog(
+                              applicationName: "UnU Novel Toolbox",
+                              applicationVersion:
+                                  UserPreferences.instance.applicationVersion,
+                              applicationIcon: Image.asset(
+                                "assets/img/Cirno.png",
+                                width: 48,
+                                height: 48,
                               ),
+                              children: [
+                                const Text("一款基於Flutter的輕量級小說下載與管理工具。"),
+                                const SizedBox(height: 24),
+                                const SettingsHeader(title: "關注我們"),
+                                SettingsTile(
+                                  position: TilePosition.first,
+                                  tileIcon: const Icon(Icons.movie),
+                                  title: const Text("Dinix(UnU) - Bilibili"),
+                                  tileColor: Theme.of(
+                                    context,
+                                  ).colorScheme.surfaceContainerLowest,
+                                  onTap: () => launchUrl(
+                                    Uri.parse(
+                                      "https://space.bilibili.com/1865480050",
+                                    ),
+                                  ),
+                                ),
+                                SettingsTile(
+                                  position: TilePosition.last,
+                                  tileIcon: const Icon(Icons.gite),
+                                  title: const Text("Github Repository"),
+                                  tileColor: Theme.of(
+                                    context,
+                                  ).colorScheme.surfaceContainerLowest,
+                                  onTap: () => launchUrl(
+                                    Uri.parse(
+                                      "https://github.com/DinixUse/UnU-Novel-Toolbox",
+                                    ),
+                                  ),
+                                ),
+                              ],
                             ),
-                          ),
-                          SettingsTile(
-                            position: TilePosition.last,
-                            tileIcon: const Icon(Icons.gite),
-                            title: const Text("Github Repository"),
-                            tileColor: Theme.of(
-                              context,
-                            ).colorScheme.surfaceContainerLowest,
-                            onTap: () => launchUrl(
-                              Uri.parse(
-                                "https://github.com/DinixUse/UnU-Novel-Toolbox",
-                              ),
-                            ),
-                          ),
-                        ],
+                          );
+                        },
                       ),
                     ),
                   ],
@@ -1155,6 +1186,12 @@ class _OnlineExtensionsState extends State<OnlineExtensions> {
   }
 
   @override
+  void dispose() {
+    searchController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.transparent,
@@ -1240,23 +1277,44 @@ class _OnlineExtensionsState extends State<OnlineExtensions> {
                     right: 16,
                   ),
                   child: ListTile(
-                    tileColor: Theme.of(context).colorScheme.surfaceContainerLowest.withAlpha(
-                      UserPreferences
-                                  .instance
-                                  .currentSettingsMap["scaffold_background_image_url"] ==
-                              ""
-                          ? 255
-                          : UserPreferences.instance.currentSettingsMap["ui_alpha"],
-                    ),
+                    tileColor: Theme.of(context)
+                        .colorScheme
+                        .surfaceContainerLowest
+                        .withAlpha(
+                          UserPreferences
+                                      .instance
+                                      .currentSettingsMap["scaffold_background_image_url"] ==
+                                  ""
+                              ? 255
+                              : UserPreferences
+                                    .instance
+                                    .currentSettingsMap["ui_alpha"],
+                        ),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.only(
                         topLeft: Radius.circular(index == 0 ? 24 : 4),
                         topRight: Radius.circular(index == 0 ? 24 : 4),
-                        bottomLeft: Radius.circular(index == extensions.length - 1 ? 24 : 4),
-                        bottomRight: Radius.circular(index == extensions.length - 1 ? 24 : 4),
+                        bottomLeft: Radius.circular(
+                          index == extensions.length - 1 ? 24 : 4,
+                        ),
+                        bottomRight: Radius.circular(
+                          index == extensions.length - 1 ? 24 : 4,
+                        ),
                       ),
                     ),
-                    title: Text(ext['name'] ?? '未知擴展'),
+                    title: Row(
+                      children: [
+                        Text(
+                          ext['name'] ?? '未知擴展',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: Theme.of(context).colorScheme.primary,
+                          ),
+                        ),
+                        const Text(" by "),
+                        Text(ext['developer'] ?? '未知開發者'),
+                      ],
+                    ),
                     subtitle: Text(
                       '${ext['version'] ?? '未知'} · ${ext['description'] ?? ''}',
                     ),
