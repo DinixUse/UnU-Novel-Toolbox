@@ -1,0 +1,323 @@
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Segoe UI', Roboto, sans-serif;
+      transition: background-color 0.2s, color 0.2s, border-color 0.2s;
+    }
+
+    :root, .light-theme {
+      --md-sys-color-primary-rgb: 0,89,199;
+      --md-sys-color-primary: #0059c7;
+      --md-sys-color-on-primary-rgb: 255,255,255;
+      --md-sys-color-on-primary: #ffffff;
+      --md-sys-color-primary-container-rgb: 217,226,255;
+      --md-sys-color-primary-container: #d9e2ff;
+      --md-sys-color-on-primary-container-rgb: 0,26,67;
+      --md-sys-color-on-primary-container: #001a43;
+      --md-sys-color-secondary-rgb: 87,94,113;
+      --md-sys-color-secondary: #575e71;
+      --md-sys-color-on-secondary-rgb: 255,255,255;
+      --md-sys-color-on-secondary: #ffffff;
+      --md-sys-color-secondary-container-rgb: 219,226,249;
+      --md-sys-color-secondary-container: #dbe2f9;
+      --md-sys-color-on-secondary-container-rgb: 20,27,44;
+      --md-sys-color-on-secondary-container: #141b2c;
+      --md-sys-color-tertiary-rgb: 114,85,115;
+      --md-sys-color-tertiary: #725573;
+      --md-sys-color-on-tertiary-rgb: 255,255,255;
+      --md-sys-color-on-tertiary: #ffffff;
+      --md-sys-color-tertiary-container-rgb: 252,215,251;
+      --md-sys-color-tertiary-container: #fcd7fb;
+      --md-sys-color-on-tertiary-container-rgb: 42,19,45;
+      --md-sys-color-on-tertiary-container: #2a132d;
+      --md-sys-color-error-rgb: 186,26,26;
+      --md-sys-color-error: #ba1a1a;
+      --md-sys-color-on-error-rgb: 255,255,255;
+      --md-sys-color-on-error: #ffffff;
+      --md-sys-color-error-container-rgb: 255,218,214;
+      --md-sys-color-error-container: #ffdad6;
+      --md-sys-color-on-error-container-rgb: 65,0,2;
+      --md-sys-color-on-error-container: #410002;
+      --md-sys-color-background-rgb: 254,251,255;
+      --md-sys-color-background: #fefbff;
+      --md-sys-color-on-background-rgb: 27,27,31;
+      --md-sys-color-on-background: #1b1b1f;
+      --md-sys-color-surface-rgb: 254,251,255;
+      --md-sys-color-surface: #fefbff;
+      --md-sys-color-on-surface-rgb: 27,27,31;
+      --md-sys-color-on-surface: #1b1b1f;
+      --md-sys-color-surface-variant-rgb: 225,226,236;
+      --md-sys-color-surface-variant: #e1e2ec;
+      --md-sys-color-on-surface-variant-rgb: 68,70,79;
+      --md-sys-color-on-surface-variant: #44464f;
+      --md-sys-color-outline-rgb: 117,119,128;
+      --md-sys-color-outline: #757780;
+      --md-sys-color-outline-variant-rgb: 197,198,208;
+      --md-sys-color-outline-variant: #c5c6d0;
+      --md-sys-color-shadow-rgb: 0,0,0;
+      --md-sys-color-shadow: #000000;
+      --md-sys-color-scrim-rgb: 0,0,0;
+      --md-sys-color-scrim: #000000;
+      --md-sys-color-inverse-surface-rgb: 48,48,52;
+      --md-sys-color-inverse-surface: #303034;
+      --md-sys-color-inverse-on-surface-rgb: 242,240,244;
+      --md-sys-color-inverse-on-surface: #f2f0f4;
+      --md-sys-color-inverse-primary-rgb: 175,198,255;
+      --md-sys-color-inverse-primary: #afc6ff;
+    }
+    .dark-theme {
+      --md-sys-color-primary-rgb: 175,198,255;
+      --md-sys-color-primary: #afc6ff;
+      --md-sys-color-on-primary-rgb: 0,45,108;
+      --md-sys-color-on-primary: #002d6c;
+      --md-sys-color-primary-container-rgb: 0,67,152;
+      --md-sys-color-primary-container: #004398;
+      --md-sys-color-on-primary-container-rgb: 217,226,255;
+      --md-sys-color-on-primary-container: #d9e2ff;
+      --md-sys-color-secondary-rgb: 191,198,220;
+      --md-sys-color-secondary: #bfc6dc;
+      --md-sys-color-on-secondary-rgb: 41,48,66;
+      --md-sys-color-on-secondary: #293042;
+      --md-sys-color-secondary-container-rgb: 63,71,89;
+      --md-sys-color-secondary-container: #3f4759;
+      --md-sys-color-on-secondary-container-rgb: 219,226,249;
+      --md-sys-color-on-secondary-container: #dbe2f9;
+      --md-sys-color-tertiary-rgb: 223,187,222;
+      --md-sys-color-tertiary: #dfbbde;
+      --md-sys-color-on-tertiary-rgb: 64,39,67;
+      --md-sys-color-on-tertiary: #402743;
+      --md-sys-color-tertiary-container-rgb: 89,62,90;
+      --md-sys-color-tertiary-container: #593e5a;
+      --md-sys-color-on-tertiary-container-rgb: 252,215,251;
+      --md-sys-color-on-tertiary-container: #fcd7fb;
+      --md-sys-color-error-rgb: 255,180,171;
+      --md-sys-color-error: #ffb4ab;
+      --md-sys-color-on-error-rgb: 105,0,5;
+      --md-sys-color-on-error: #690005;
+      --md-sys-color-error-container-rgb: 147,0,10;
+      --md-sys-color-error-container: #93000a;
+      --md-sys-color-on-error-container-rgb: 255,180,171;
+      --md-sys-color-on-error-container: #ffb4ab;
+      --md-sys-color-background-rgb: 27,27,31;
+      --md-sys-color-background: #1b1b1f;
+      --md-sys-color-on-background-rgb: 227,226,230;
+      --md-sys-color-on-background: #e3e2e6;
+      --md-sys-color-surface-rgb: 27,27,31;
+      --md-sys-color-surface: #1b1b1f;
+      --md-sys-color-on-surface-rgb: 227,226,230;
+      --md-sys-color-on-surface: #e3e2e6;
+      --md-sys-color-surface-variant-rgb: 68,70,79;
+      --md-sys-color-surface-variant: #44464f;
+      --md-sys-color-on-surface-variant-rgb: 197,198,208;
+      --md-sys-color-on-surface-variant: #c5c6d0;
+      --md-sys-color-outline-rgb: 143,144,153;
+      --md-sys-color-outline: #8f9099;
+      --md-sys-color-outline-variant-rgb: 68,70,79;
+      --md-sys-color-outline-variant: #44464f;
+      --md-sys-color-shadow-rgb: 0,0,0;
+      --md-sys-color-shadow: #000000;
+      --md-sys-color-scrim-rgb: 0,0,0;
+      --md-sys-color-scrim: #000000;
+      --md-sys-color-inverse-surface-rgb: 227,226,230;
+      --md-sys-color-inverse-surface: #e3e2e6;
+      --md-sys-color-inverse-on-surface-rgb: 48,48,52;
+      --md-sys-color-inverse-on-surface: #303034;
+      --md-sys-color-inverse-primary-rgb: 0,89,199;
+      --md-sys-color-inverse-primary: #0059c7;
+    }
+
+    body {
+      background: var(--md-sys-color-background);
+      color: var(--md-sys-color-on-background);
+      padding: 2rem;
+      max-width: 1000px;
+      margin: 0 auto;
+    }
+
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 2rem;
+    }
+
+    .title {
+      font-size: 2rem;
+      font-weight: 500;
+      color: var(--md-sys-color-primary);
+    }
+
+    .theme-btn {
+      background: var(--md-sys-color-primary-container);
+      color: var(--md-sys-color-on-primary-container);
+      border: none;
+      padding: 0.75rem 1.25rem;
+      border-radius: 2rem;
+      font-size: 1rem;
+      cursor: pointer;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .ripple-container {
+      position: relative;
+      overflow: hidden;
+      cursor: pointer;
+    }
+
+    .ripple {
+      position: absolute;
+      border-radius: 50%;
+      background: rgba(var(--md-sys-color-on-surface-rgb), 0.3);
+      transform: scale(0);
+      animation: ripple-animation 0.6s linear;
+      pointer-events: none;
+    }
+
+    @keyframes ripple-animation {
+      to {
+        transform: scale(4);
+        opacity: 0;
+      }
+    }
+
+    .section {
+      margin: 2rem 0;
+      padding: 1.5rem;
+      background: var(--md-sys-color-surface);
+      border-radius: 1rem;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+
+    .section-title {
+      font-size: 1.25rem;
+      font-weight: 500;
+      margin-bottom: 1.5rem;
+      color: var(--md-sys-color-secondary);
+    }
+
+    .components {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1rem;
+      align-items: center;
+    }
+
+    .md-button {
+      padding: 0.75rem 1.5rem;
+      border-radius: 2rem;
+      border: none;
+      font-size: 1rem;
+      font-weight: 500;
+      cursor: pointer;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .btn-filled {
+      background: var(--md-sys-color-primary);
+      color: var(--md-sys-color-on-primary);
+    }
+
+    .btn-outlined {
+      background: transparent;
+      color: var(--md-sys-color-primary);
+      border: 1px solid var(--md-sys-color-outline);
+    }
+
+    .btn-text {
+      background: transparent;
+      color: var(--md-sys-color-primary);
+    }
+
+    .md-card {
+      width: 280px;
+      padding: 1.5rem;
+      background: var(--md-sys-color-surface-variant);
+      border-radius: 1rem;
+      cursor: pointer;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .card-title {
+      font-size: 1.1rem;
+      font-weight: 500;
+      margin-bottom: 0.5rem;
+    }
+
+    .card-desc {
+      color: var(--md-sys-color-on-surface-variant);
+      font-size: 0.9rem;
+    }
+
+    .md-input {
+      padding: 0.75rem 1rem;
+      border: 1px solid var(--md-sys-color-outline);
+      border-radius: 0.5rem;
+      background: var(--md-sys-color-surface);
+      color: var(--md-sys-color-on-surface);
+      font-size: 1rem;
+      width: 280px;
+      outline: none;
+    }
+
+    .md-input:focus {
+      border-color: var(--md-sys-color-primary);
+    }
+
+    .checkbox-wrapper, .switch-wrapper {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      cursor: pointer;
+    }
+
+    .md-checkbox {
+      width: 18px;
+      height: 18px;
+      accent-color: var(--md-sys-color-primary);
+    }
+
+    .md-switch {
+      width: 40px;
+      height: 20px;
+      appearance: none;
+      background: var(--md-sys-color-outline);
+      border-radius: 20px;
+      position: relative;
+      cursor: pointer;
+    }
+
+    .md-switch:checked {
+      background: var(--md-sys-color-primary);
+    }
+
+    .md-switch::before {
+      content: '';
+      position: absolute;
+      width: 16px;
+      height: 16px;
+      background: white;
+      border-radius: 50%;
+      top: 2px;
+      left: 2px;
+      transition: 0.2s;
+    }
+
+    .md-switch:checked::before {
+      left: 22px;
+    }
+
+    .md-chip {
+      padding: 0.5rem 1rem;
+      background: var(--md-sys-color-secondary-container);
+      color: var(--md-sys-color-on-secondary-container);
+      border-radius: 2rem;
+      font-size: 0.9rem;
+      position: relative;
+      overflow: hidden;
+      cursor: pointer;
+    }

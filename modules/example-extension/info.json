@@ -1,0 +1,10 @@
+{
+    "name": "example-extension",
+    "version": "1.0.0",
+    "description": "An example extension for demonstration purposes.",
+    "main": "index.html",
+
+    "apply-for-a-tab": true,
+    "tab-title": "Example Extension",
+    "tab-icon": "assets\\image\\icon.jpg"
+}
