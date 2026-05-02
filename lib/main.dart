@@ -160,30 +160,46 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage>
     with SingleTickerProviderStateMixin {
   // Tab 配置列表
-  List<AppTab> _tabs = [
-    const AppTab(title: "起始頁", icon: Icons.home, page: WelcomePage()),
-    const AppTab(title: "下載器", icon: Icons.download, page: DownloaderPage()),
-    const AppTab(
-      title: "轉換工具",
-      icon: Icons.conveyor_belt,
-      page: ConvertersPage(),
-    ),
-
-    // const AppTab(
-    //   title: "測試頁面",
-    //   icon: Icons.toc_outlined,
-    //   page: NovelExtractorPage(),
-    // ),
-  ];
+  late List<AppTab> _tabs;
 
   void loadMoreTabs() {
+    _tabs = [
+      const AppTab(title: "起始頁", icon: Icons.home, page: WelcomePage()),
+      const AppTab(title: "下載器", icon: Icons.download, page: DownloaderPage()),
+      const AppTab(
+        title: "轉換工具",
+        icon: Icons.conveyor_belt,
+        page: ConvertersPage(),
+      ),
+
+      // const AppTab(
+      //   title: "測試頁面",
+      //   icon: Icons.toc_outlined,
+      //   page: NovelExtractorPage(),
+      // ),
+    ];
+
     for (final extensionItem in ExtensionService.instance.extensions) {
       if (extensionItem.applyForATab) {
+        Uri mainUri = Uri.file(extensionItem.main);
+        print(mainUri.toString());
+
         _tabs.add(
           AppTab(
             title: extensionItem.name,
             icon: Icons.extension,
-            page: ExtensionTemplateWebView(url: "https://team-dinix.infinityfreeapp.com"),
+            page: ExtensionTemplateWebView(
+              url: mainUri.toString(),
+              enableBlur:
+                  UserPreferences.instance.currentSettingsMap["enable_blur"],
+              alpha:
+                  UserPreferences
+                          .instance
+                          .currentSettingsMap["scaffold_background_image_url"] ==
+                      ""
+                  ? 255
+                  : UserPreferences.instance.currentSettingsMap["ui_alpha"],
+            ),
           ),
         );
       }

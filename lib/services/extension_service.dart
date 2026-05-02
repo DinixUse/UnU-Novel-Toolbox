@@ -58,7 +58,7 @@ class ExtensionService {
               name: infoMap["name"],
               version: infoMap["version"],
               description: infoMap["description"],
-              main: infoMap["main"],
+              main: path.join(entity.path ,infoMap["main"]),
               applyForATab: infoMap["apply-for-a-tab"],
               tabTitle: infoMap["apply-for-a-tab"]
                   ? infoMap["tab-title"]

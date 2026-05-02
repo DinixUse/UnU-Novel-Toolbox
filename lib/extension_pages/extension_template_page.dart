@@ -27,13 +27,13 @@ class ExtensionTemplateWebView extends StatefulWidget {
     super.key,
     this.title,
     required this.url,
-    this.appBarColor,
+    this.alpha,
     this.enableBlur,
   });
   final String? title;
   final String url;
 
-  final Color? appBarColor;
+  final int? alpha;
   final bool? enableBlur;
 
   @override
@@ -87,8 +87,9 @@ class _ExtensionTemplateWebViewState extends State<ExtensionTemplateWebView> {
       child: Scaffold(
         backgroundColor: Colors.transparent,
         appBar: AppBar(
-          backgroundColor:
-              widget.appBarColor ?? Theme.of(context).colorScheme.surface,
+          backgroundColor: Theme.of(
+            context,
+          ).colorScheme.surface.withAlpha(widget.alpha ?? 255),
           title: Text(widget.title ?? _pageTitle ?? 'Loading...'),
           leading: IconButton(
             icon: const Icon(Icons.arrow_back),
