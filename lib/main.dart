@@ -20,6 +20,7 @@ import 'downloader_page.dart';
 import 'preferences.dart';
 import 'welcome_page.dart';
 import 'widgets/widgets.dart';
+import 'extension_pages/extension_template_page.dart';
 
 import 'testing.dart';
 import 'testing_2.dart';
@@ -30,6 +31,9 @@ void main() async {
   await windowManager.ensureInitialized();
 
   await UserPreferences.instance.initializePreferences();
+  await ExtensionService.instance.initExtensionService();
+
+  print(ExtensionService.instance.errorExtensions);
 
   WindowOptions windowOptions = const WindowOptions(
     size: Size(1208, 789),
@@ -156,7 +160,7 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage>
     with SingleTickerProviderStateMixin {
   // Tab 配置列表
-  final List<AppTab> _tabs = [
+  List<AppTab> _tabs = [
     const AppTab(title: "起始頁", icon: Icons.home, page: WelcomePage()),
     const AppTab(title: "下載器", icon: Icons.download, page: DownloaderPage()),
     const AppTab(
@@ -164,17 +168,37 @@ class _HomePageState extends State<HomePage>
       icon: Icons.conveyor_belt,
       page: ConvertersPage(),
     ),
-    AppTab(
-      title: "設定",
-      icon: Icons.settings,
-      page: OuterSettingsPage(key: globalSettingsPageTransferKey),
-    ),
+
     // const AppTab(
     //   title: "測試頁面",
     //   icon: Icons.toc_outlined,
     //   page: NovelExtractorPage(),
     // ),
   ];
+
+  void loadMoreTabs() {
+    for (final extensionItem in ExtensionService.instance.extensions) {
+      if (extensionItem.applyForATab) {
+        _tabs.add(
+          AppTab(
+            title: extensionItem.name,
+            icon: Icons.extension,
+            page: ExtensionTemplateWebView(url: "https://team-dinix.infinityfreeapp.com"),
+          ),
+        );
+      }
+    }
+
+    _tabs.add(
+      AppTab(
+        title: "設定",
+        icon: Icons.settings,
+        page: OuterSettingsPage(key: globalSettingsPageTransferKey),
+      ),
+    );
+
+    setState(() {});
+  }
 
   int _selectedIndex = 0;
   AnimationController? _animationController;
@@ -187,6 +211,7 @@ class _HomePageState extends State<HomePage>
   void initState() {
     super.initState();
     _initAnimation();
+    loadMoreTabs();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _animationController?.forward();
     });

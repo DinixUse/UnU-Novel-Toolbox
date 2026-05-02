@@ -1,32 +1,49 @@
 import 'package:flutter/material.dart';
 import 'package:webview_windows/webview_windows.dart';
+import 'dart:ui';
 
 void main() {
-  runApp(const MyApp());
+  runApp(const A());
 }
 
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+class A extends StatelessWidget {
+  const A({super.key});
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Tmp Page',
       theme: ThemeData(primarySwatch: Colors.blue),
-      home: const FullScreenWebView(),
+      home: const ExtensionTemplateWebView(
+        url:
+            'file:///E:/Things/Github/UnU-Novel-Toolbox/modules/example-extension/index.html',
+      ),
     );
   }
 }
 
-class FullScreenWebView extends StatefulWidget {
-  const FullScreenWebView({super.key});
+class ExtensionTemplateWebView extends StatefulWidget {
+  const ExtensionTemplateWebView({
+    super.key,
+    this.title,
+    required this.url,
+    this.appBarColor,
+    this.enableBlur,
+  });
+  final String? title;
+  final String url;
+
+  final Color? appBarColor;
+  final bool? enableBlur;
 
   @override
-  State<FullScreenWebView> createState() => _FullScreenWebViewState();
+  State<ExtensionTemplateWebView> createState() =>
+      _ExtensionTemplateWebViewState();
 }
 
-class _FullScreenWebViewState extends State<FullScreenWebView> {
+class _ExtensionTemplateWebViewState extends State<ExtensionTemplateWebView> {
   final WebviewController _webViewController = WebviewController();
+  String? _pageTitle;
 
   @override
   void initState() {
@@ -37,10 +54,18 @@ class _FullScreenWebViewState extends State<FullScreenWebView> {
   Future<void> _initWebView() async {
     try {
       await _webViewController.initialize();
-      await _webViewController.loadUrl('https://www.bing.com');
+      await _webViewController.loadUrl(widget.url);
 
       _webViewController.loadingState.listen((state) {
         if (mounted) setState(() {});
+      });
+
+      _webViewController.title.listen((title) {
+        if (mounted) {
+          setState(() {
+            _pageTitle = title;
+          });
+        }
       });
     } catch (e) {
       debugPrint('WebView 初始化失败: $e');
@@ -55,25 +80,33 @@ class _FullScreenWebViewState extends State<FullScreenWebView> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Example WebView'),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () async {
-            await _webViewController.goBack();
-          },
-        ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: () {
-              _webViewController.reload();
+    return BackdropFilter(
+      filter: widget.enableBlur ?? false
+          ? ImageFilter.blur(sigmaX: 10, sigmaY: 10)
+          : ImageFilter.blur(sigmaX: 0, sigmaY: 0),
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
+        appBar: AppBar(
+          backgroundColor:
+              widget.appBarColor ?? Theme.of(context).colorScheme.surface,
+          title: Text(widget.title ?? _pageTitle ?? 'Loading...'),
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back),
+            onPressed: () async {
+              await _webViewController.goBack();
             },
           ),
-        ],
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.refresh),
+              onPressed: () {
+                _webViewController.reload();
+              },
+            ),
+          ],
+        ),
+        body: Webview(_webViewController),
       ),
-      body: Webview(_webViewController),
     );
   }
 }
